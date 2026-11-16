@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -107,7 +108,7 @@ fun EagleCanvas(modifier: Modifier = Modifier) {
 
     Canvas(modifier = modifier) {
         drawEagle(
-            scale = breathe,
+            bodyScale = breathe,
             headTiltDegrees = headTilt,
             eyeOpenAmount = eyeOpenAmount
         )
@@ -115,7 +116,7 @@ fun EagleCanvas(modifier: Modifier = Modifier) {
 }
 
 private fun DrawScope.drawEagle(
-    scale: Float,
+    bodyScale: Float,
     headTiltDegrees: Float,
     eyeOpenAmount: Float
 ) {
@@ -129,7 +130,7 @@ private fun DrawScope.drawEagle(
     val beakColor = Color(0xFFE0A526)
     val eyeColor = Color(0xFFFFD54A)
 
-    scale(scale, scale, pivot = Offset(cx, cy)) {
+    scale(bodyScale, bodyScale, pivot = Offset(cx, cy)) {
         drawOval(
             color = bodyColor,
             topLeft = Offset(cx - w * 0.22f, cy - h * 0.05f),
@@ -138,16 +139,16 @@ private fun DrawScope.drawEagle(
 
         val wingPathLeft = Path().apply {
             moveTo(cx - w * 0.05f, cy - h * 0.02f)
-            quadraticTo(cx - w * 0.42f, cy + h * 0.1f, cx - w * 0.18f, cy + h * 0.42f)
-            quadraticTo(cx - w * 0.1f, cy + h * 0.25f, cx - w * 0.02f, cy + h * 0.3f)
+            quadraticBezierTo(cx - w * 0.42f, cy + h * 0.1f, cx - w * 0.18f, cy + h * 0.42f)
+            quadraticBezierTo(cx - w * 0.1f, cy + h * 0.25f, cx - w * 0.02f, cy + h * 0.3f)
             close()
         }
         drawPath(wingPathLeft, color = wingColor)
 
         val wingPathRight = Path().apply {
             moveTo(cx + w * 0.05f, cy - h * 0.02f)
-            quadraticTo(cx + w * 0.42f, cy + h * 0.1f, cx + w * 0.18f, cy + h * 0.42f)
-            quadraticTo(cx + w * 0.1f, cy + h * 0.25f, cx + w * 0.02f, cy + h * 0.3f)
+            quadraticBezierTo(cx + w * 0.42f, cy + h * 0.1f, cx + w * 0.18f, cy + h * 0.42f)
+            quadraticBezierTo(cx + w * 0.1f, cy + h * 0.25f, cx + w * 0.02f, cy + h * 0.3f)
             close()
         }
         drawPath(wingPathRight, color = wingColor)

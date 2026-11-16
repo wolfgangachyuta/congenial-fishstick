@@ -30,6 +30,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -130,7 +133,13 @@ private fun DrawScope.drawEagle(
     val beakColor = Color(0xFFE0A526)
     val eyeColor = Color(0xFFFFD54A)
 
-    scale(bodyScale, bodyScale, pivot = Offset(cx, cy)) {
+    withTransform({
+        scale(
+            scaleX = bodyScale,
+            scaleY = bodyScale,
+            pivot = Offset(cx, cy)
+        )
+    }) {
         drawOval(
             color = bodyColor,
             topLeft = Offset(cx - w * 0.22f, cy - h * 0.05f),
@@ -153,7 +162,12 @@ private fun DrawScope.drawEagle(
         }
         drawPath(wingPathRight, color = wingColor)
 
-        rotate(headTiltDegrees, pivot = Offset(cx, cy - h * 0.28f)) {
+        withTransform({
+            rotate(
+                degrees = headTiltDegrees,
+                pivot = Offset(cx, cy - h * 0.28f)
+            )
+        }) {
             drawCircle(
                 color = bodyColor,
                 radius = w * 0.17f,

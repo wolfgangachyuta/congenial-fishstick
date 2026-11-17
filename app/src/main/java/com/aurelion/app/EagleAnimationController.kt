@@ -66,12 +66,11 @@ class EagleAnimationController {
         }
     }
 
-    /** Only meant to be called by code already holding exclusive control
+      /** Only meant to be called by code already holding exclusive control
      *  (see [withExclusiveControl]). */
-    fun setState(target: EagleState) {
+    fun forceState(target: EagleState) {
         state = target
     }
-
     private suspend fun blink() {
         state = EagleState.BLINK
         delay(140)

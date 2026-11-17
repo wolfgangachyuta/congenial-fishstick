@@ -9,8 +9,8 @@ android {
 
     defaultConfig {
         applicationId = "com.aurelion.app"
-        minSdk = 24
-        targetSdk = 34
+        minSdk = 26
+        targetSdk = 33
         versionCode = 1
         versionName = "0.1.0-phase1"
     }

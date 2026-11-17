@@ -16,7 +16,7 @@ enum class EagleState(val drawableRes: Int) {
     CALLING(R.drawable.calling),
     ANNOYED(R.drawable.grumpy),
     SURPRISED(R.drawable.surprised),
-    RESTING(R.drawable.head_down_1),
+    RESTING(R.drawable.head_down),
     SLEEPING(R.drawable.sleeping_curled),
     PREENING(R.drawable.preening),
     SCRATCHING(R.drawable.scratching),

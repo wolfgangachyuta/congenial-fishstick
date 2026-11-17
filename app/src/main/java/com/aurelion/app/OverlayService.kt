@@ -152,9 +152,9 @@ class OverlayService : Service() {
 
             val target = pickPerchPoint()
             controller.withExclusiveControl {
-                controller.setState(EagleState.TAKEOFF)
+                controller.forceState(EagleState.TAKEOFF)
                 delay(400)
-                controller.setState(EagleState.EXCITED)
+                controller.forceState(EagleState.EXCITED)
 
                 val startX = layoutParams.x
                 val startY = layoutParams.y

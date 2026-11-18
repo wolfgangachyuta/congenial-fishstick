@@ -1,3 +1,9 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+}
+
 val releaseStorePath = System.getenv("RELEASE_KEYSTORE_PATH")
 val releaseStorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("RELEASE_KEY_ALIAS")
@@ -8,12 +14,6 @@ val releaseSigningConfigured = listOf(
     releaseKeyAlias,
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
-
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-}
 
 android {
     namespace = "com.aurelion.app"

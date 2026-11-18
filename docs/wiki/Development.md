@@ -4,7 +4,7 @@
 
 - Android Studio with Android SDK Platform 36 and Build Tools 36.0.0.
 - JDK 17.
-- The checked-in Gradle Wrapper (Gradle 8.14.7).
+- The checked-in Gradle Wrapper (Gradle 8.14.7), Android Gradle Plugin 8.13.2, Kotlin 2.4.21, and JDK 17. AndroidX dependencies are pinned to stable releases compatible with the API 36 build baseline.
 
 ## Build
 

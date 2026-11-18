@@ -134,6 +134,7 @@ See the complete [Roadmap](docs/ROADMAP.md).
 - [Privacy & Permissions](docs/wiki/Privacy-and-Permissions.md)
 - [Standalone Privacy Notice](PRIVACY.md)
 - [Changelog](CHANGELOG.md)
+- [Security Policy](SECURITY.md)
 - [Release Signing Guide](docs/RELEASE-SIGNING.md)
 - [Feature Laboratory](docs/wiki/Ideas.md)
 

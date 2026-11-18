@@ -17,7 +17,8 @@ All notable AURELION changes are recorded here.
 - Local privacy notice, backup rules, release-signing guide, and automated CI.
 
 ### Engineering
-- Pinned Gradle Wrapper, Android Gradle Plugin, Kotlin, and JDK toolchain.
+- Pinned Gradle Wrapper, Android Gradle Plugin, Kotlin, JDK, and current API 36-compatible AndroidX dependency baseline.
+- Pinned GitHub Actions to immutable Node 24-compatible releases.
 - Debug and release lint, JVM unit tests, debug APK, and release APK/AAB CI builds.
 - Optional GitHub Actions release signing through repository secrets.
 - Release builds use R8 code shrinking and resource shrinking.

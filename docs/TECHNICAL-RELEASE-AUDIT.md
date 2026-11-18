@@ -125,6 +125,7 @@ This addendum supersedes the earlier configuration snapshot above.
 - Added safe-drawing insets to the Activity content for edge-to-edge Android versions.
 - Added a defensive overlay-permission check before service startup, handled overlay attachment failures, tracked actual service state, and made service cleanup conditional on acquired resources.
 - Set the user-started overlay service to `START_NOT_STICKY`.
+- Removed the direct battery-optimization exemption permission and its settings button; AURELION should first demonstrate that normal foreground-service behavior is insufficient before requesting an exemption.
 - Added CI triggers for pushes and pull requests, plus lint and unit-test tasks. Concurrent runs on the same ref are cancelled to avoid redundant builds.
 
 ### Validation status
@@ -137,7 +138,6 @@ The workflow has been triggered against the upgraded toolchain. At the time of t
 2. Add the official Gradle Wrapper (scripts, wrapper JAR, and pinned distribution properties) so local builds do not depend on a globally installed Gradle.
 3. Complete service-start failure reporting and permission-revocation testing.
 4. Replace deprecated display-bound calculations with modern window metrics and insets.
-5. Review the battery-exemption request and remove it unless device testing demonstrates a genuine need.
 6. Complete backup/data-extraction rules and a full privacy/dependency/network audit.
 7. Add unit tests, a launcher/adaptive icon, and a proper notification icon.
 8. Configure secure release signing only after the release build is validated.

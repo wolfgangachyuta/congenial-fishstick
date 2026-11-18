@@ -240,10 +240,7 @@ class OverlayService : Service() {
                                     (layoutParams.y + dragAmount.y.roundToInt())
                                         .coerceIn(minY, maxY)
 
-                                windowManager.updateViewLayout(
-                                    overlayView,
-                                    layoutParams
-                                )
+                                updateOverlayLayout()
                             }
                         }
                 ) {
@@ -570,7 +567,14 @@ class OverlayService : Service() {
             .setOnlyAlertOnce(true)
             .setOngoing(true)
             .addAction(
-                Notification.Action.Builder(null, "Stop companion", stopPendingIntent).build()
+                Notification.Action.Builder(
+                    android.graphics.drawable.Icon.createWithResource(
+                        this,
+                        R.drawable.ic_notification
+                    ),
+                    "Stop companion",
+                    stopPendingIntent
+                ).build()
             )
             .build()
     }

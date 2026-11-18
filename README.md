@@ -61,7 +61,7 @@ Features described as planned or experimental in this repository's documentation
 4. Extract the ZIP and locate `app-debug.apk`.
 5. Install it on your Android device. You may need to allow your file manager or browser to install apps from unknown sources.
 
-Build artifacts are temporary workflow outputs and may not always be available. Use a release build when one is published.
+Build artifacts are temporary workflow outputs and may not always be available. The workflow also assembles unsigned release APK/AAB outputs for engineering validation; these are not installable production packages until signed.
 
 ### Option B — Build it yourself
 Requirements:
@@ -74,7 +74,7 @@ Requirements:
 3. Allow Gradle sync to complete.
 4. Run the app on an Android device or emulator.
 
-The project currently targets Android API levels as configured in the app's Gradle file. Check the project configuration for exact SDK values.
+The project uses Android SDK 36 (Android 16) as its compile and target SDK, supports Android 8.0 (API 26) and later, and builds with the checked-in Gradle Wrapper.
 
 ---
 
@@ -140,7 +140,7 @@ These pages are maintained in the repository under `docs/wiki/` as wiki-ready Ma
 
 ## 🔐 Privacy philosophy
 
-AURELION should never needlessly collect personal data to feel alive. The baseline companion should work locally. Future cloud, AI, analytics, or online features must be optional, clearly explained, and designed so users know what leaves their device.
+AURELION should never needlessly collect personal data to feel alive. The current app has no Internet permission or network integration. Companion position, pet-care values, and pacing preferences remain local in SharedPreferences; Android backup/transfer rules include those settings. Future cloud, AI, analytics, or online features must be optional, clearly explained, and designed so users know what leaves their device.
 
 See [Privacy & Permissions](docs/wiki/Privacy-and-Permissions.md).
 

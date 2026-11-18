@@ -19,11 +19,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,6 +33,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,6 +53,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,6 +76,13 @@ fun AurelionPreviewScreen() {
     LaunchedEffect(Unit) { controller.runSpeechLoop() }
 
     var companionRunning by remember { mutableStateOf(false) }
+    var petStats by remember { mutableStateOf(PetStatsStore(context).load()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            petStats = PetStatsStore(context).load()
+            delay(5000)
+        }
+    }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -108,13 +119,27 @@ fun AurelionPreviewScreen() {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             EagleWithSpeechBubble(controller = controller, eagleSize = 260.dp)
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text("Energy", color = Color(0xFFB8B8B8), fontSize = 12.sp)
+            LinearProgressIndicator(
+                progress = petStats.energy,
+                modifier = Modifier.fillMaxWidth(0.6f)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Happiness", color = Color(0xFFB8B8B8), fontSize = 12.sp)
+            LinearProgressIndicator(
+                progress = petStats.happiness,
+                modifier = Modifier.fillMaxWidth(0.6f)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = "AURELION — Phase 4: the eagle can speak",
+                text = "AURELION — Phase 5: touch, menu & pet needs",
                 color = Color(0xFFE8C77E),
                 fontSize = 16.sp
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Row {
                 Button(onClick = {
                     if (!Settings.canDrawOverlays(context)) {
@@ -142,10 +167,6 @@ fun AurelionPreviewScreen() {
     }
 }
 
-/** Eagle of a fixed [eagleSize], with its speech bubble (if any) floating
- *  above it. Used by the in-app preview; the overlay builds its own
- *  version of this layout so it can also attach drag handling to just the
- *  eagle's bounds. */
 @Composable
 fun EagleWithSpeechBubble(controller: EagleAnimationController, eagleSize: Dp) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -160,8 +181,6 @@ fun EagleWithSpeechBubble(controller: EagleAnimationController, eagleSize: Dp) {
     }
 }
 
-/** A small rounded speech-bubble label. Shared by the in-app preview and
- *  the floating overlay. */
 @Composable
 fun SpeechBubble(text: String) {
     Surface(
@@ -179,6 +198,51 @@ fun SpeechBubble(text: String) {
             fontSize = 13.sp
         )
     }
+}
+
+@Composable
+fun EagleInteractionMenu(
+    onMakeSound: () -> Unit,
+    onFlySomewhere: () -> Unit,
+    onSleep: () -> Unit,
+    onWakeUp: () -> Unit,
+    onFeed: () -> Unit,
+    onPet: () -> Unit,
+    onHide: () -> Unit,
+    onOpenApp: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFF2A2A2E),
+        shadowElevation = 6.dp,
+        modifier = Modifier
+            .padding(top = 6.dp)
+            .widthIn(max = 180.dp)
+    ) {
+        Column(modifier = Modifier.padding(6.dp)) {
+            MenuAction("Make a sound", onMakeSound)
+            MenuAction("Fly somewhere", onFlySomewhere)
+            MenuAction("Sleep", onSleep)
+            MenuAction("Wake up", onWakeUp)
+            MenuAction("Feed", onFeed)
+            MenuAction("Pet", onPet)
+            MenuAction("Hide companion", onHide)
+            MenuAction("Open app", onOpenApp)
+        }
+    }
+}
+
+@Composable
+private fun MenuAction(label: String, onClick: () -> Unit) {
+    Text(
+        text = label,
+        color = Color(0xFFEDEDED),
+        fontSize = 13.sp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 10.dp)
+    )
 }
 
 @Composable

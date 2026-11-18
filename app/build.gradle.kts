@@ -11,9 +11,8 @@ android {
     defaultConfig {
         applicationId = "com.aurelion.app"
         minSdk = 26
-        // Keep targetSdk at 33 until the foreground-service and overlay
-        // startup model has been migrated and validated for Android 14+.
-        targetSdk = 33
+        // Target Android 16 after declaring the special-use foreground service.
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0-phase1"
     }

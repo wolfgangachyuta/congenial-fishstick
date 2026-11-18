@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
@@ -63,12 +64,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF1B1B1F)) {
-                    var showSettings by remember { mutableStateOf(false) }
-                    if (showSettings) {
-                        BackHandler { showSettings = false }
-                        AurelionSettingsScreen(onBack = { showSettings = false })
-                    } else {
-                        AurelionPreviewScreen(onOpenSettings = { showSettings = true })
+                    Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+                        var showSettings by remember { mutableStateOf(false) }
+                        if (showSettings) {
+                            BackHandler { showSettings = false }
+                            AurelionSettingsScreen(onBack = { showSettings = false })
+                        } else {
+                            AurelionPreviewScreen(onOpenSettings = { showSettings = true })
+                        }
                     }
                 }
             }

@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload signed release outputs
         if: ${{ env.HAS_RELEASE_SIGNING == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: aurelion-signed-release
           path: |
@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload unsigned release outputs
         if: ${{ env.HAS_RELEASE_SIGNING != 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: aurelion-unsigned-release
           path: |

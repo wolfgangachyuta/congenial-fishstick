@@ -74,7 +74,7 @@ Requirements:
 3. Allow Gradle sync to complete.
 4. Run the app on an Android device or emulator.
 
-The project uses Android SDK 36 (Android 16) as its compile and target SDK, supports Android 8.0 (API 26) and later, and builds with the checked-in Gradle Wrapper.
+The project uses Android SDK 36 (Android 16) as its compile and target SDK, supports Android 8.0 (API 26) and later, and builds with the checked-in Gradle Wrapper. CI validates debug and release lint, JVM tests, a debug APK, and unsigned or signed release APK/AAB outputs depending on configured signing secrets.
 
 ---
 
@@ -132,6 +132,8 @@ See the complete [Roadmap](docs/ROADMAP.md).
 - [Personality & Behavior](docs/wiki/Personality.md)
 - [Development Guide](docs/wiki/Development.md)
 - [Privacy & Permissions](docs/wiki/Privacy-and-Permissions.md)
+- [Standalone Privacy Notice](PRIVACY.md)
+- [Release Signing Guide](docs/RELEASE-SIGNING.md)
 - [Feature Laboratory](docs/wiki/Ideas.md)
 
 These pages are maintained in the repository under `docs/wiki/` as wiki-ready Markdown. They can be copied into GitHub Wiki pages if/when the GitHub Wiki is enabled separately.

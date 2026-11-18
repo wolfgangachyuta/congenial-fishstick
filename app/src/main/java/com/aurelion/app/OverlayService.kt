@@ -542,10 +542,10 @@ class OverlayService : Service() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "AURELION companion",
+            getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Shows when your floating eagle companion is active."
+            description = getString(R.string.notification_channel_description)
             setShowBadge(false)
         }
         manager.createNotificationChannel(channel)
@@ -566,8 +566,8 @@ class OverlayService : Service() {
         )
 
         return Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("AURELION is active")
-            .setContentText("Your floating companion is perched on the screen.")
+            .setContentTitle(getString(R.string.notification_title))
+            .setContentText(getString(R.string.notification_text))
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(openAppPendingIntent)
             .setCategory(Notification.CATEGORY_SERVICE)
@@ -580,7 +580,7 @@ class OverlayService : Service() {
                         this,
                         R.drawable.ic_notification
                     ),
-                    "Stop companion",
+                    getString(R.string.notification_action_stop),
                     stopPendingIntent
                 ).build()
             )

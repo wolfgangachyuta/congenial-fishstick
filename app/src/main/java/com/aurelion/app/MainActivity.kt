@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -372,7 +373,7 @@ fun EagleView(controller: EagleAnimationController, modifier: Modifier = Modifie
     ) { pose ->
         Image(
             painter = painterResource(id = pose.drawableRes),
-            contentDescription = "AURELION, a virtual golden eagle",
+            contentDescription = stringResource(R.string.eagle_companion_description),
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize()
         )

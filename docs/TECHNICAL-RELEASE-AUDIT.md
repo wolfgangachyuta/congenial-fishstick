@@ -14,7 +14,7 @@ Subsequent changes to the service, tests, icon resources, and release assembly r
 
 - Android Gradle Plugin 8.13.2, Kotlin 2.4.21, Compose compiler plugin, JDK 17, Gradle Wrapper 8.14.7 with a pinned distribution checksum.
 - compileSdk 36, targetSdk 36, minSdk 26, release version name 0.1.0.
-- CI triggers for pushes, pull requests, and manual dispatch; lint, JVM unit tests, debug APK, unsigned release APK, and unsigned AAB tasks.
+- CI triggers for pushes, pull requests, and manual dispatch; debug/release lint, JVM unit tests, debug APK, and release APK/AAB assembly. Optional signing uses repository Actions secrets; signed outputs are verified before upload.
 - Declared specialUse foreground service with matching permission, subtype metadata, and typed foreground promotion on Android 14+.
 - Defensive overlay permission checks, guarded service startup, service-state reporting, cleanup, and an explicit notification stop action.
 - Modern window metrics and system-bar/cutout insets on Android 11+, with a legacy display-metrics fallback.
@@ -29,7 +29,7 @@ Subsequent changes to the service, tests, icon resources, and release assembly r
 
 1. Get a clean CI run for the latest service, icons, tests, and release assembly changes.
 2. Review lint warnings and R8/minified release build behaviour.
-3. Add secure release signing. The signing keystore must be generated and kept outside Git; GitHub Actions secrets must be configured by the repository owner.
+3. Configure the secure release-signing secrets described in docs/RELEASE-SIGNING.md. The signing keystore must be generated and kept outside Git.
 4. Install and exercise the app on physical Android 8–16 devices. CI cannot validate overlay coordinates, OEM background policies, permission UX, battery use, or real notification behaviour.
 5. Inspect the final APK/AAB manifest and dependency graph, and perform a network-traffic check.
 6. Verify install, upgrade, uninstall/reinstall, backup/restore, and release-key update behaviour.

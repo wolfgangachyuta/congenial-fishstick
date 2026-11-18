@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">AURELION</string>
+    <string name="eagle_companion_description">AURELION, a virtual golden eagle</string>
+    <string name="notification_channel_name">AURELION companion</string>
+    <string name="notification_channel_description">Shows when your floating eagle companion is active.</string>
+    <string name="notification_title">AURELION is active</string>
+    <string name="notification_text">Your floating companion is perched on the screen.</string>
+    <string name="notification_action_stop">Stop companion</string>
 </resources>

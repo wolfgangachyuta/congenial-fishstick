@@ -41,7 +41,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Validate Kotlin and Android sources
-        run: ./gradlew lintDebug testDebugUnitTest --no-daemon
+        run: ./gradlew lintDebug lintRelease testDebugUnitTest --no-daemon
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon

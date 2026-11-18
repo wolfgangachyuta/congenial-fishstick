@@ -10,7 +10,7 @@
 
 Run these commands from the repository root:
 
-- ./gradlew --no-daemon lintDebug testDebugUnitTest
+- ./gradlew --no-daemon lintDebug lintRelease testDebugUnitTest
 - ./gradlew --no-daemon assembleDebug
 - ./gradlew --no-daemon assembleRelease bundleRelease
 

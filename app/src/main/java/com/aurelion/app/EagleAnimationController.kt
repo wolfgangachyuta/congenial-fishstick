@@ -123,7 +123,7 @@ class EagleAnimationController {
         // Spec default: 10–30 minutes between unprompted remarks. Shrink
         // these (e.g. 15_000L to 45_000L) while testing if you don't want
         // to wait around for it to talk.
-        private const val SPEECH_MIN_INTERVAL_MS = 600_000L
-        private const val SPEECH_MAX_INTERVAL_MS = 1_800_000L
+        private const val SPEECH_MIN_INTERVAL_MS = 15_000L
+        private const val SPEECH_MAX_INTERVAL_MS = 45_000L
     }
 }

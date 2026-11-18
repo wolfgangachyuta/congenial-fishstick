@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,6 +36,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,7 +63,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF1B1B1F)) {
-                    AurelionPreviewScreen()
+                    var showSettings by remember { mutableStateOf(false) }
+                    if (showSettings) {
+                        BackHandler { showSettings = false }
+                        AurelionSettingsScreen(onBack = { showSettings = false })
+                    } else {
+                        AurelionPreviewScreen(onOpenSettings = { showSettings = true })
+                    }
                 }
             }
         }
@@ -69,7 +77,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AurelionPreviewScreen() {
+fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val controller = remember { EagleAnimationController() }
     LaunchedEffect(Unit) { controller.run() }
@@ -135,7 +143,7 @@ fun AurelionPreviewScreen() {
 
             Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = "AURELION — Phase 5: touch, menu & pet needs",
+                text = "AURELION — Phase 5+7: a settled companion",
                 color = Color(0xFFE8C77E),
                 fontSize = 16.sp
             )
@@ -163,6 +171,83 @@ fun AurelionPreviewScreen() {
                     Text("Stop")
                 }
             }
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(onClick = onOpenSettings) {
+                Text("Settings")
+            }
+        }
+    }
+}
+
+@Composable
+fun AurelionSettingsScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val settingsStore = remember { SettingsStore(context) }
+    var talkativeness by remember { mutableStateOf(settingsStore.loadTalkativeness()) }
+    var movementFrequency by remember { mutableStateOf(settingsStore.loadMovementFrequency()) }
+
+    val overlayGranted = Settings.canDrawOverlays(context)
+    val notificationsGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp)
+    ) {
+        Text("AURELION settings", color = Color(0xFFE8C77E), fontSize = 20.sp)
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text("Talkativeness", color = Color(0xFFB8B8B8), fontSize = 13.sp)
+        Slider(
+            value = talkativeness,
+            onValueChange = {
+                talkativeness = it
+                settingsStore.saveTalkativeness(it)
+            },
+            valueRange = 0.5f..2f
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Movement frequency", color = Color(0xFFB8B8B8), fontSize = 13.sp)
+        Slider(
+            value = movementFrequency,
+            onValueChange = {
+                movementFrequency = it
+                settingsStore.saveMovementFrequency(it)
+            },
+            valueRange = 0.5f..2f
+        )
+
+        Spacer(modifier = Modifier.height(28.dp))
+        Text("Permissions", color = Color(0xFFE8C77E), fontSize = 16.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = if (overlayGranted) "Floating overlay: granted" else "Floating overlay: not granted",
+            color = Color(0xFFB8B8B8),
+            fontSize = 13.sp
+        )
+        Text(
+            text = if (notificationsGranted) "Notifications: granted" else "Notifications: not granted",
+            color = Color(0xFFB8B8B8),
+            fontSize = 13.sp
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(onClick = {
+            context.startActivity(
+                Intent(
+                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:${context.packageName}")
+                )
+            )
+        }) {
+            Text("Exempt from battery optimization")
+        }
+
+        Spacer(modifier = Modifier.height(28.dp))
+        Button(onClick = onBack) {
+            Text("Back")
         }
     }
 }

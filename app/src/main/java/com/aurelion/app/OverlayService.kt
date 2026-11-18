@@ -19,12 +19,17 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -35,14 +40,15 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
  * Hosts AURELION as a small draggable overlay bubble above every other
- * app, using WindowManager directly (no Activity involved). Adds
- * autonomous movement between eight perch points and, as of Phase 4,
- * unprompted speech bubbles, on top of Phase 2's drag-to-reposition.
+ * app. Combines drag-to-reposition (Phase 2), autonomous perch-to-perch
+ * movement (Phase 3), unprompted speech (Phase 4), and tap/double-tap/
+ * long-press interactions plus the five pet-care stats (Phase 5).
  */
 class OverlayService : Service() {
 
@@ -93,9 +99,20 @@ class OverlayService : Service() {
         overlayView.setViewTreeSavedStateRegistryOwner(lifecycleOwner)
         overlayView.setContent {
             val controller = remember { EagleAnimationController() }
+            val petStatsController = remember { PetStatsController(this@OverlayService) }
+            val coroutineScope = rememberCoroutineScope()
+            var showMenu by remember { mutableStateOf(false) }
+
             LaunchedEffect(Unit) { controller.run() }
             LaunchedEffect(Unit) { controller.runSpeechLoop() }
             LaunchedEffect(Unit) { runAutonomousMovement(controller) }
+            LaunchedEffect(Unit) { petStatsController.run() }
+            LaunchedEffect(controller.state) {
+                petStatsController.isResting = (controller.state == EagleState.SLEEPING)
+            }
+            LaunchedEffect(petStatsController.stats) {
+                controller.updatePetStats(petStatsController.stats)
+            }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 AnimatedVisibility(
@@ -109,6 +126,31 @@ class OverlayService : Service() {
                     modifier = Modifier
                         .size(EAGLE_SIZE_DP.dp)
                         .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = {
+                                    coroutineScope.launch {
+                                        if (!controller.isPerformingAction) {
+                                            controller.playExpression(
+                                                listOf(
+                                                    EagleState.LOOK_LEFT,
+                                                    EagleState.LOOK_RIGHT,
+                                                    EagleState.CURIOUS
+                                                ).random()
+                                            )
+                                        }
+                                    }
+                                },
+                                onDoubleTap = {
+                                    coroutineScope.launch {
+                                        if (!controller.isPerformingAction) {
+                                            controller.playExpression(EagleState.EXCITED, holdMillis = 1200)
+                                        }
+                                    }
+                                },
+                                onLongPress = { showMenu = true }
+                            )
+                        }
+                        .pointerInput(Unit) {
                             detectDragGestures { _, dragAmount ->
                                 layoutParams.x = (layoutParams.x + dragAmount.x.roundToInt()).coerceIn(0, maxX)
                                 layoutParams.y = (layoutParams.y + dragAmount.y.roundToInt()).coerceIn(0, maxY)
@@ -117,6 +159,48 @@ class OverlayService : Service() {
                         }
                 ) {
                     EagleView(controller = controller, modifier = Modifier.fillMaxSize())
+                }
+
+                AnimatedVisibility(visible = showMenu) {
+                    EagleInteractionMenu(
+                        onMakeSound = {
+                            showMenu = false
+                            coroutineScope.launch { controller.say(EagleDialogue.pickLine()) }
+                        },
+                        onFlySomewhere = {
+                            showMenu = false
+                            coroutineScope.launch { flyToRandomPerch(controller) }
+                        },
+                        onSleep = {
+                            showMenu = false
+                            controller.forceSleep()
+                        },
+                        onWakeUp = {
+                            showMenu = false
+                            controller.forceWake()
+                        },
+                        onFeed = {
+                            showMenu = false
+                            petStatsController.feed()
+                            coroutineScope.launch { controller.say("Much appreciated. More, if you insist.") }
+                        },
+                        onPet = {
+                            showMenu = false
+                            petStatsController.pet()
+                            coroutineScope.launch { controller.playExpression(EagleState.CURIOUS, holdMillis = 1400) }
+                        },
+                        onHide = {
+                            showMenu = false
+                            stopSelf()
+                        },
+                        onOpenApp = {
+                            showMenu = false
+                            val launchIntent = Intent(this@OverlayService, MainActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(launchIntent)
+                        }
+                    )
                 }
             }
         }
@@ -157,34 +241,32 @@ class OverlayService : Service() {
         maxY = (metrics.heightPixels - eagleSizePx).coerceAtLeast(0)
     }
 
-    /**
-     * Occasionally flies the eagle to one of eight perch points (the four
-     * corners and the four edge midpoints), playing takeoff/wing-flap
-     * poses for the transition. Claims exclusive control of [controller]
-     * for the duration so the idle blink/expression loop — and now
-     * speech — don't fight it.
-     */
     private suspend fun runAutonomousMovement(controller: EagleAnimationController) {
         while (true) {
             delay(Random.nextLong(20_000, 50_000))
+            flyToRandomPerch(controller)
+        }
+    }
 
-            val target = pickPerchPoint()
-            controller.withExclusiveControl {
-                controller.forceState(EagleState.TAKEOFF)
-                delay(400)
-                controller.forceState(EagleState.EXCITED)
+    /** Flies the eagle to one perch point. Called both by the autonomous
+     *  timer and by the menu's "Fly somewhere" action. */
+    private suspend fun flyToRandomPerch(controller: EagleAnimationController) {
+        val target = pickPerchPoint()
+        controller.withExclusiveControl {
+            controller.forceState(EagleState.TAKEOFF)
+            delay(400)
+            controller.forceState(EagleState.EXCITED)
 
-                val startX = layoutParams.x
-                val startY = layoutParams.y
-                val steps = 24
-                for (i in 1..steps) {
-                    val t = i / steps.toFloat()
-                    val eased = 1f - (1f - t) * (1f - t)
-                    layoutParams.x = (startX + (target.first - startX) * eased).roundToInt()
-                    layoutParams.y = (startY + (target.second - startY) * eased).roundToInt()
-                    windowManager.updateViewLayout(overlayView, layoutParams)
-                    delay(20)
-                }
+            val startX = layoutParams.x
+            val startY = layoutParams.y
+            val steps = 24
+            for (i in 1..steps) {
+                val t = i / steps.toFloat()
+                val eased = 1f - (1f - t) * (1f - t)
+                layoutParams.x = (startX + (target.first - startX) * eased).roundToInt()
+                layoutParams.y = (startY + (target.second - startY) * eased).roundToInt()
+                windowManager.updateViewLayout(overlayView, layoutParams)
+                delay(20)
             }
         }
     }

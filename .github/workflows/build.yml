@@ -2,6 +2,13 @@ name: Build AURELION APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -19,18 +26,19 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Pre-accept Android SDK license
-        run: |
-          mkdir -p "$ANDROID_SDK_ROOT/licenses"
-          printf "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
 
-      - name: Install required SDK packages
-        run: $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
+      - name: Install Android SDK 36
+        run: $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.2"
+          gradle-version: "8.13"
+
+      - name: Validate Kotlin and Android sources
+        run: gradle lintDebug testDebugUnitTest --no-daemon
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
@@ -40,3 +48,4 @@ jobs:
         with:
           name: aurelion-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

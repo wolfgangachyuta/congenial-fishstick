@@ -9,8 +9,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.IBinder
 import android.util.DisplayMetrics
 import android.view.Gravity
@@ -86,7 +88,7 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(NOTIFICATION_ID, buildNotification())
+        promoteToForeground()
 
         serviceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
         controller = EagleAnimationController()
@@ -299,6 +301,19 @@ class OverlayService : Service() {
         }
 
         windowManager.addView(overlayView, layoutParams)
+    }
+
+    private fun promoteToForeground() {
+        val notification = buildNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

@@ -53,6 +53,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlin.random.Random
+import androidx.compose.foundation.layout.Arrangement
 
 /**
  * Hosts AURELION as a small draggable overlay bubble above every other
@@ -160,12 +161,13 @@ class OverlayService : Service() {
                 // Fixed-height slot: the bubble fades in/out inside it, so
                 // the window's overall measured size — and therefore the
                 // eagle's on-screen position — never changes, whether or
-                // not the eagle is currently talking.
-                Box(
+                // not the eagle is currently talking.               
+                Column(
                     modifier = Modifier
                         .height(64.dp)
                         .widthIn(max = 200.dp),
-                    contentAlignment = Alignment.BottomCenter
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom
                 ) {
                     AnimatedVisibility(
                         visible = controller.speechText != null,
@@ -174,6 +176,7 @@ class OverlayService : Service() {
                     ) {
                         SpeechBubble(text = controller.speechText.orEmpty())
                     }
+                }
                 }
                 Box(
                     modifier = Modifier

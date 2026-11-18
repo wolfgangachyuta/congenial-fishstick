@@ -20,6 +20,7 @@ jobs:
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      HAS_RELEASE_SIGNING: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' && secrets.RELEASE_KEYSTORE_PASSWORD != '' && secrets.RELEASE_KEY_ALIAS != '' && secrets.RELEASE_KEY_PASSWORD != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,8 +46,27 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Build unsigned release APK and bundle
+      - name: Decode release signing keystore
+        if: ${{ env.HAS_RELEASE_SIGNING == 'true' }}
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/aurelion-release.jks"
+          chmod 600 "$RUNNER_TEMP/aurelion-release.jks"
+
+      - name: Build release APK and bundle
+        env:
+          RELEASE_KEYSTORE_PATH: ${{ runner.temp }}/aurelion-release.jks
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - name: Verify signed release outputs
+        if: ${{ env.HAS_RELEASE_SIGNING == 'true' }}
+        run: |
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+          jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -56,7 +76,19 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload signed release outputs
+        if: ${{ env.HAS_RELEASE_SIGNING == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurelion-signed-release
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload unsigned release outputs
+        if: ${{ env.HAS_RELEASE_SIGNING != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: aurelion-unsigned-release

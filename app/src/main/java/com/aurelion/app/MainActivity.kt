@@ -372,7 +372,7 @@ fun EagleView(controller: EagleAnimationController, modifier: Modifier = Modifie
     ) { pose ->
         Image(
             painter = painterResource(id = pose.drawableRes),
-            contentDescription = null,
+            contentDescription = "AURELION, a virtual golden eagle",
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize()
         )

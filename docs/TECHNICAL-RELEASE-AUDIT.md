@@ -6,7 +6,7 @@
 
 ## Latest verified CI result
 
-**PASS** — GitHub Actions run [#44333370375](https://github.com/wolfgangachyuta/congenial-fishstick/actions/runs/44333370375), commit `2cdf223d43eea6fedbfe0cf1be1d73d46c997b69`. This includes the latest source, dependency versions, and build-workflow path filters.
+**PASS** — GitHub Actions run [#44333539042](https://github.com/wolfgangachyuta/congenial-fishstick/actions/runs/44333539042), commit `ba3eaaeaa241fb9c98000cad097f033a952dafe2`. This includes the latest source, dependency versions, pinned actions, CI path filters, and Dependabot compatibility holds.
 
 The run completed successfully:
 - Debug and release lint.

@@ -98,7 +98,9 @@ class EagleAnimationController {
     }
 
     suspend fun say(text: String, holdMillis: Long = 4200) {
+        if (isManuallyAsleep) return
         withExclusiveControl {
+            if (isManuallyAsleep) return@withExclusiveControl
             try {
                 speechText = text
                 forceState(

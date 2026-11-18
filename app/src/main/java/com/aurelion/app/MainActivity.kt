@@ -296,6 +296,18 @@ fun AurelionSettingsScreen(onBack: () -> Unit) {
             color = Color(0xFFB8B8B8),
             fontSize = 13.sp
         )
+        Text(
+            "The foreground notification shows when the companion is active and provides a quick stop control.",
+            color = Color(0xFF8F8F8F),
+            fontSize = 12.sp
+        )
+        if (!notificationsGranted) {
+            Text(
+                "If notifications are denied, Android may show the active companion in system task controls instead.",
+                color = Color(0xFF8F8F8F),
+                fontSize = 12.sp
+            )
+        }
         Spacer(modifier = Modifier.height(12.dp))
         Spacer(modifier = Modifier.height(28.dp))
         Button(onClick = onBack) {

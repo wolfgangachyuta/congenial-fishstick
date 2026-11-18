@@ -33,6 +33,7 @@ GitHub Actions runs on pushes and pull requests targeting main, as well as manua
 - [ ] Test battery saver and manufacturer-specific background restrictions.
 - [ ] Leave the companion running for several hours and inspect battery use.
 - [ ] Confirm movement, speech, sleep, wake, feed, pet, and tap actions do not conflict.
+- [ ] Confirm manual sleep suppresses autonomous movement and speech until the user wakes the eagle.
 - [ ] Verify backup/restore and device transfer.
 - [ ] Inspect the packaged APK permissions and capture network traffic to confirm no unexpected data flow.
 - [ ] Check accessibility, contrast, and reduced-motion behaviour.

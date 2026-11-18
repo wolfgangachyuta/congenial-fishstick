@@ -473,6 +473,10 @@ class OverlayService : Service() {
 
             delay((base / multiplier).roundToLong())
 
+            if (controller.isManuallyAsleep ||
+                controller.state == EagleState.SLEEPING
+            ) continue
+
             flyToRandomPerch(controller)
         }
     }
@@ -481,9 +485,14 @@ class OverlayService : Service() {
     private suspend fun flyToRandomPerch(
         controller: EagleAnimationController
     ) {
+        if (controller.isManuallyAsleep ||
+            controller.state == EagleState.SLEEPING
+        ) return
+
         val target = pickPerchPoint()
 
         controller.withExclusiveControl {
+            if (controller.isManuallyAsleep) return@withExclusiveControl
             controller.forceState(EagleState.TAKEOFF)
             delay(400)
 

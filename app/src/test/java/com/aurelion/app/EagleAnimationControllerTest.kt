@@ -27,6 +27,15 @@ class EagleAnimationControllerTest {
     }
 
     @Test
+    fun speechDoesNotWakeOrInterruptManualSleep() = runBlocking {
+        val controller = EagleAnimationController()
+        controller.forceSleep()
+        controller.say("A quiet line", holdMillis = 0)
+        assertEquals(EagleState.SLEEPING, controller.state)
+        assertEquals(null, controller.speechText)
+    }
+
+    @Test
     fun tapExpressionCannotOverwriteAnExclusiveAction() = runBlocking {
         val controller = EagleAnimationController()
         val entered = CompletableDeferred<Unit>()

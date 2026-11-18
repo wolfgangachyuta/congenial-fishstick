@@ -13,12 +13,19 @@ import android.os.IBinder
 import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.WindowManager
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
@@ -33,9 +40,9 @@ import kotlin.random.Random
 
 /**
  * Hosts AURELION as a small draggable overlay bubble above every other
- * app, using WindowManager directly (no Activity involved). Phase 3 adds
- * autonomous movement between eight perch points (corners + edge
- * midpoints), on top of the Phase 2 drag-to-reposition behaviour.
+ * app, using WindowManager directly (no Activity involved). Adds
+ * autonomous movement between eight perch points and, as of Phase 4,
+ * unprompted speech bubbles, on top of Phase 2's drag-to-reposition.
  */
 class OverlayService : Service() {
 
@@ -87,20 +94,30 @@ class OverlayService : Service() {
         overlayView.setContent {
             val controller = remember { EagleAnimationController() }
             LaunchedEffect(Unit) { controller.run() }
+            LaunchedEffect(Unit) { controller.runSpeechLoop() }
             LaunchedEffect(Unit) { runAutonomousMovement(controller) }
 
-            Box(
-                modifier = Modifier
-                    .size(EAGLE_SIZE_DP.dp)
-                    .pointerInput(Unit) {
-                        detectDragGestures { _, dragAmount ->
-                            layoutParams.x = (layoutParams.x + dragAmount.x.roundToInt()).coerceIn(0, maxX)
-                            layoutParams.y = (layoutParams.y + dragAmount.y.roundToInt()).coerceIn(0, maxY)
-                            windowManager.updateViewLayout(overlayView, layoutParams)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                AnimatedVisibility(
+                    visible = controller.speechText != null,
+                    enter = fadeIn() + scaleIn(initialScale = 0.85f),
+                    exit = fadeOut() + scaleOut(targetScale = 0.85f)
+                ) {
+                    SpeechBubble(text = controller.speechText.orEmpty())
+                }
+                Box(
+                    modifier = Modifier
+                        .size(EAGLE_SIZE_DP.dp)
+                        .pointerInput(Unit) {
+                            detectDragGestures { _, dragAmount ->
+                                layoutParams.x = (layoutParams.x + dragAmount.x.roundToInt()).coerceIn(0, maxX)
+                                layoutParams.y = (layoutParams.y + dragAmount.y.roundToInt()).coerceIn(0, maxY)
+                                windowManager.updateViewLayout(overlayView, layoutParams)
+                            }
                         }
-                    }
-            ) {
-                EagleView(controller = controller, modifier = Modifier.fillMaxSize())
+                ) {
+                    EagleView(controller = controller, modifier = Modifier.fillMaxSize())
+                }
             }
         }
 
@@ -144,7 +161,8 @@ class OverlayService : Service() {
      * Occasionally flies the eagle to one of eight perch points (the four
      * corners and the four edge midpoints), playing takeoff/wing-flap
      * poses for the transition. Claims exclusive control of [controller]
-     * for the duration so the idle blink/expression loop doesn't fight it.
+     * for the duration so the idle blink/expression loop — and now
+     * speech — don't fight it.
      */
     private suspend fun runAutonomousMovement(controller: EagleAnimationController) {
         while (true) {

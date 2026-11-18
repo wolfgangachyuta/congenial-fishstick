@@ -135,6 +135,7 @@ See the complete [Roadmap](docs/ROADMAP.md).
 - [Standalone Privacy Notice](PRIVACY.md)
 - [Changelog](CHANGELOG.md)
 - [Security Policy](SECURITY.md)
+- [Technical Release Audit](docs/TECHNICAL-RELEASE-AUDIT.md)
 - [Release Signing Guide](docs/RELEASE-SIGNING.md)
 - [Feature Laboratory](docs/wiki/Ideas.md)
 

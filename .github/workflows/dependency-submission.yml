@@ -3,6 +3,11 @@ name: Submit Gradle dependency graph
 on:
   push:
     branches: [main]
+    paths:
+      - "**/*.gradle"
+      - "**/*.gradle.kts"
+      - "gradle/**"
+      - "gradle.properties"
   schedule:
     - cron: "0 8 * * 1"
 

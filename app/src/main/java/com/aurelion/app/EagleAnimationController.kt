@@ -6,14 +6,15 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.Calendar
 import kotlin.random.Random
 
 /**
  * Drives AURELION's autonomous behaviour: idle blinking/expression
- * changes (now influenced by [PetStats]), unprompted speech, and (via
- * [withExclusiveControl]) lets other systems — movement, speech, touch
- * reactions — take the pose over for a while without fighting the idle
- * loop, or each other, for control.
+ * changes (influenced by [PetStats]), unprompted speech (now also aware
+ * of time of day), and (via [withExclusiveControl]) lets other systems —
+ * movement, speech, touch reactions — take the pose over for a while
+ * without fighting the idle loop, or each other, for control.
  */
 class EagleAnimationController {
 
@@ -30,11 +31,19 @@ class EagleAnimationController {
         private set
 
     private var currentPetStats: PetStats = PetStats()
+    private var talkativenessMultiplier: Float = 1f
     private var lastVariation: EagleState? = null
+    private var lastGreetedDayOfYear: Int = -1
     private val exclusiveControlMutex = Mutex()
 
     fun updatePetStats(stats: PetStats) {
         currentPetStats = stats
+    }
+
+    /** 1f = spec default pacing; 2f = roughly twice as talkative; 0.5f =
+     *  roughly half as talkative. */
+    fun updateTalkativeness(multiplier: Float) {
+        talkativenessMultiplier = multiplier
     }
 
     /** Call once, from a LaunchedEffect — runs until its coroutine is cancelled. */
@@ -44,7 +53,18 @@ class EagleAnimationController {
 
             if (isPerformingAction) continue
 
-            if (isManuallyAsleep || currentPetStats.energy < 0.2f) {
+            val calendar = Calendar.getInstance()
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
+            val isNight = hour < 6 || hour >= 23
+
+            if (hour in 6..9 && dayOfYear != lastGreetedDayOfYear) {
+                lastGreetedDayOfYear = dayOfYear
+                say("Good morning, human.")
+                continue
+            }
+
+            if (isManuallyAsleep || currentPetStats.energy < 0.2f || (isNight && Random.nextFloat() < 0.5f)) {
                 if (state != EagleState.SLEEPING) state = EagleState.SLEEPING
                 continue
             }
@@ -69,11 +89,19 @@ class EagleAnimationController {
     }
 
     /** Call once, from a LaunchedEffect — periodically has the eagle speak
-     *  an unprompted line from [EagleDialogue], roughly every 10–30
-     *  minutes by default. */
+     *  an unprompted line from [EagleDialogue]. Mostly stays quiet at
+     *  night, and speaks more or less often depending on
+     *  [updateTalkativeness]. */
     suspend fun runSpeechLoop() {
         while (true) {
-            delay(Random.nextLong(SPEECH_MIN_INTERVAL_MS, SPEECH_MAX_INTERVAL_MS))
+            val base = Random.nextLong(SPEECH_MIN_INTERVAL_MS, SPEECH_MAX_INTERVAL_MS)
+            val adjusted = (base / talkativenessMultiplier.coerceAtLeast(0.1f)).toLong()
+            delay(adjusted)
+
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val isNight = hour < 6 || hour >= 23
+            if (isNight && Random.nextFloat() < 0.8f) continue
+
             say(EagleDialogue.pickLine())
         }
     }

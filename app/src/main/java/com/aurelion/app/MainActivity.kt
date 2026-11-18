@@ -91,7 +91,13 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
     LaunchedEffect(Unit) {
         while (true) {
             petStats = PetStatsStore(context).load()
-            delay(5000)
+            companionRunning = OverlayService.isRunning &&
+                Settings.canDrawOverlays(context)
+
+            if (OverlayService.isRunning && !Settings.canDrawOverlays(context)) {
+                context.stopService(Intent(context, OverlayService::class.java))
+            }
+            delay(1000)
         }
     }
 
@@ -99,7 +105,6 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
         ActivityResultContracts.RequestPermission()
     ) {
         context.startForegroundService(Intent(context, OverlayService::class.java))
-        companionRunning = true
     }
 
     fun startCompanion() {
@@ -112,7 +117,6 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             context.startForegroundService(Intent(context, OverlayService::class.java))
-            companionRunning = true
         }
     }
 

@@ -1,15 +1,18 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
     namespace = "com.aurelion.app"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.aurelion.app"
         minSdk = 26
+        // Keep targetSdk at 33 until the foreground-service and overlay
+        // startup model has been migrated and validated for Android 14+.
         targetSdk = 33
         versionCode = 1
         versionName = "0.1.0-phase1"
@@ -17,10 +20,6 @@ android {
 
     buildFeatures {
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
     }
 
     compileOptions {

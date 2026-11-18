@@ -177,7 +177,6 @@ class OverlayService : Service() {
                         SpeechBubble(text = controller.speechText.orEmpty())
                     }
                 }
-                }
                 Box(
                     modifier = Modifier
                         .size(EAGLE_SIZE_DP.dp)

@@ -241,17 +241,6 @@ fun AurelionSettingsScreen(onBack: () -> Unit) {
             fontSize = 13.sp
         )
         Spacer(modifier = Modifier.height(12.dp))
-        Button(onClick = {
-            context.startActivity(
-                Intent(
-                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                    Uri.parse("package:${context.packageName}")
-                )
-            )
-        }) {
-            Text("Exempt from battery optimization")
-        }
-
         Spacer(modifier = Modifier.height(28.dp))
         Button(onClick = onBack) {
             Text("Back")

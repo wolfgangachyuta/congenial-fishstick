@@ -1,5 +1,9 @@
 name: Build AURELION APK
 
+concurrency:
+  group: aurelion-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:

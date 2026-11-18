@@ -15,6 +15,12 @@ updates:
       - dependency-name: "androidx.core:core-ktx"
         versions:
           - ">= 1.18.0"
+      - dependency-name: "gradle-wrapper"
+        versions:
+          - ">= 9.0.0"
+      - dependency-name: "com.android.application"
+        versions:
+          - ">= 9.0.0"
     groups:
       androidx:
         patterns:
@@ -29,3 +35,7 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "actions/upload-artifact"
+        versions:
+          - ">= 7.0.0"

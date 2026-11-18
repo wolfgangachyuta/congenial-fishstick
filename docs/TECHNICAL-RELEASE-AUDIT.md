@@ -6,7 +6,7 @@
 
 ## Latest verified CI result
 
-**PASS** — GitHub Actions run [#44332116353](https://github.com/wolfgangachyuta/congenial-fishstick/actions/runs/44332116353), commit `fefd2c43dff72ba35d6e7d91cc9cb8f9de712292`.
+**PASS** — GitHub Actions run [#44333370375](https://github.com/wolfgangachyuta/congenial-fishstick/actions/runs/44333370375), commit `2cdf223d43eea6fedbfe0cf1be1d73d46c997b69`. This includes the latest source, dependency versions, and build-workflow path filters.
 
 The run completed successfully:
 - Debug and release lint.
@@ -16,7 +16,7 @@ The run completed successfully:
 - Release Android App Bundle assembly.
 - Debug and unsigned release artifact uploads.
 
-The separate Gradle dependency-submission workflow also completed successfully on the same source revision. Dependabot is configured for weekly Gradle and GitHub Actions updates.
+The separate Gradle dependency-submission workflow also completed successfully on the same source revision. Dependabot is configured for weekly Gradle and GitHub Actions updates. Updates requiring the API 37 / AGP 9 toolchain or an unvalidated newer artifact action are held until a deliberate migration.
 
 The workflow had no release-signing secrets configured during this run. Therefore the signing-key decode and signature-verification steps were correctly skipped, and the release APK/AAB artifacts are **unsigned**. The debug APK is signed with the standard debug key and is suitable for device testing, not public distribution.
 

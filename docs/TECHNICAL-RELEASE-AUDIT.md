@@ -12,7 +12,7 @@ The latest source changes are being checked in CI. The run must pass debug/relea
 
 ## Implemented in source
 
-- Android Gradle Plugin 8.13.2, Kotlin 2.4.21, Compose compiler plugin, JDK 17, Gradle Wrapper 8.14.7 with a pinned distribution checksum. AndroidX Core KTX 1.17.0, Activity Compose 1.13.0, Lifecycle 2.11.0, and Compose BOM 2026.06.01 are selected to stay on the Compose 1.11/API 36-compatible line; Compose 1.12 requires compileSdk 37 and AGP 9.
+- Android Gradle Plugin 8.13.2, Kotlin 2.4.21, Compose compiler plugin, JDK 17, Gradle Wrapper 8.14.7 with a pinned distribution checksum. AndroidX Core KTX 1.17.0, Activity Compose 1.13.0, Lifecycle 2.10.0, and Compose BOM 2026.06.01 are selected to stay on the Compose 1.11/API 36-compatible line; Compose 1.12 requires compileSdk 37 and AGP 9.
 - compileSdk 36, targetSdk 36, minSdk 26, release version name 0.1.0.
 - CI triggers for pushes, pull requests, and manual dispatch; debug/release lint, JVM unit tests, debug APK, and release APK/AAB assembly. GitHub Actions are pinned to immutable Node 24-compatible release commits. Dependabot checks Gradle and workflow dependencies weekly. Optional signing uses repository Actions secrets; signed outputs are verified before upload.
 - Declared specialUse foreground service with matching permission, subtype metadata, and typed foreground promotion on Android 14+.

@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "androidx.lifecycle:lifecycle-runtime-ktx"
+        versions:
+          - ">= 2.11.0"
     groups:
       androidx:
         patterns:

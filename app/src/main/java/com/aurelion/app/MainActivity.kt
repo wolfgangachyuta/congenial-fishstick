@@ -107,6 +107,8 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
             startupError = OverlayService.startupError
 
             if (OverlayService.isRunning && !Settings.canDrawOverlays(context)) {
+                OverlayService.startupError =
+                    "Overlay permission was revoked. The companion has been stopped."
                 context.stopService(Intent(context, OverlayService::class.java))
             }
             delay(1000)
@@ -123,8 +125,10 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
             )
         } catch (error: Exception) {
             Log.e("AURELION", "Unable to request companion startup", error)
-            startupError =
+            val message =
                 "Android could not start AURELION. Reopen the app and try again."
+            OverlayService.startupError = message
+            startupError = message
         }
     }
 
@@ -138,7 +142,10 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
 
     fun startCompanion() {
         if (!Settings.canDrawOverlays(context)) {
-            startupError = "Allow AURELION to display over other apps to use the floating companion."
+            val message =
+                "Allow AURELION to display over other apps to use the floating companion."
+            OverlayService.startupError = message
+            startupError = message
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -158,6 +165,11 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
     ) {
         if (Settings.canDrawOverlays(context)) {
             startCompanion()
+        } else {
+            val message =
+                "Overlay permission is required. Enable Display over other apps in Android Settings."
+            OverlayService.startupError = message
+            startupError = message
         }
     }
 
@@ -191,6 +203,10 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
             Row {
                 Button(onClick = {
                     if (!Settings.canDrawOverlays(context)) {
+                        val message =
+                            "AURELION needs permission to display over other apps for the floating companion."
+                        OverlayService.startupError = message
+                        startupError = message
                         overlayPermissionLauncher.launch(
                             Intent(
                                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,

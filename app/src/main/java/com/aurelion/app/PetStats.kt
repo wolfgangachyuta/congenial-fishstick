@@ -14,10 +14,13 @@ data class PetStats(
     val hunger: Float = 0.2f
 ) {
     fun clamp() = copy(
-        energy = energy.coerceIn(0f, 1f),
-        happiness = happiness.coerceIn(0f, 1f),
-        affection = affection.coerceIn(0f, 1f),
-        curiosity = curiosity.coerceIn(0f, 1f),
-        hunger = hunger.coerceIn(0f, 1f)
+        energy = energy.finiteUnitOr(0.8f),
+        happiness = happiness.finiteUnitOr(0.7f),
+        affection = affection.finiteUnitOr(0.5f),
+        curiosity = curiosity.finiteUnitOr(0.5f),
+        hunger = hunger.finiteUnitOr(0.2f)
     )
 }
+
+private fun Float.finiteUnitOr(fallback: Float): Float =
+    if (isFinite()) coerceIn(0f, 1f) else fallback

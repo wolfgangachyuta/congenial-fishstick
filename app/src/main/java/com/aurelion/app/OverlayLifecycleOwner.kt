@@ -9,18 +9,15 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 
-/**
- * A bare-bones Lifecycle/ViewModelStore/SavedStateRegistry owner for
- * hosting a Compose UI inside a WindowManager overlay, where there is no
- * Activity or Fragment to supply these automatically.
- */
+/** Lifecycle owner for Compose content hosted in a WindowManager overlay. */
 class OverlayLifecycleOwner :
     LifecycleOwner,
     ViewModelStoreOwner,
     SavedStateRegistryOwner {
 
     private val lifecycleRegistry = LifecycleRegistry(this)
-    private val savedStateRegistryController = SavedStateRegistryController.create(this)
+    private val savedStateRegistryController =
+        SavedStateRegistryController.create(this)
 
     override val lifecycle: Lifecycle
         get() = lifecycleRegistry
@@ -37,4 +34,4 @@ class OverlayLifecycleOwner :
     fun performRestore() {
         savedStateRegistryController.performRestore(null)
     }
-    }
+}

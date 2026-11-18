@@ -73,6 +73,7 @@ class OverlayService : Service() {
     private lateinit var serviceScope: CoroutineScope
     private val lifecycleOwner = OverlayLifecycleOwner()
 
+    private var minX: Int = 0
     private var maxX: Int = 0
     private var maxY: Int = 0
     private var minY: Int = 0
@@ -122,7 +123,7 @@ class OverlayService : Service() {
 
         refreshBounds()
 
-        val savedX = prefs.getInt(KEY_X, maxX).coerceIn(0, maxX)
+        val savedX = prefs.getInt(KEY_X, maxX).coerceIn(minX, maxX)
         val savedY = prefs.getInt(KEY_Y, maxY / 3).coerceIn(minY, maxY)
 
         layoutParams = WindowManager.LayoutParams(
@@ -234,7 +235,7 @@ class OverlayService : Service() {
                             detectDragGestures { _, dragAmount ->
                                 layoutParams.x =
                                     (layoutParams.x + dragAmount.x.roundToInt())
-                                        .coerceIn(0, maxX)
+                                        .coerceIn(minX, maxX)
 
                                 layoutParams.y =
                                     (layoutParams.y + dragAmount.y.roundToInt())
@@ -359,7 +360,7 @@ class OverlayService : Service() {
         ) {
             refreshBounds()
 
-            layoutParams.x = layoutParams.x.coerceIn(0, maxX)
+            layoutParams.x = layoutParams.x.coerceIn(minX, maxX)
             layoutParams.y =
                 layoutParams.y.coerceIn(minY, maxY)
 
@@ -434,19 +435,26 @@ class OverlayService : Service() {
             val insets = metrics.windowInsets.getInsetsIgnoringVisibility(
                 WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
             )
-            maxX = (bounds.right - insets.right - eagleSizePx)
-                .coerceAtLeast(insets.left)
-            maxY = (bounds.bottom - insets.bottom - eagleSizePx)
-                .coerceAtLeast(insets.top)
+            minX = bounds.left + insets.left
+            maxX = (bounds.right - insets.right - eagleSizePx).coerceAtLeast(minX)
             minY = (bounds.top + insets.top + topSafetyMarginPx)
-                .coerceAtMost(maxY)
+                .coerceAtMost(bounds.bottom - insets.bottom)
+            maxY = (bounds.bottom - insets.bottom - eagleSizePx).coerceAtLeast(minY)
         } else {
             val metrics = android.util.DisplayMetrics()
             @Suppress("DEPRECATION")
             windowManager.defaultDisplay.getRealMetrics(metrics)
-            maxX = (metrics.widthPixels - eagleSizePx).coerceAtLeast(0)
-            maxY = (metrics.heightPixels - eagleSizePx).coerceAtLeast(0)
-            minY = topSafetyMarginPx.coerceAtMost(maxY)
+            minX = 0
+            maxX = (metrics.widthPixels - eagleSizePx).coerceAtLeast(minX)
+            val navigationBarId = resources.getIdentifier(
+                "navigation_bar_height", "dimen", "android"
+            )
+            val navigationBarHeight = if (navigationBarId > 0) {
+                resources.getDimensionPixelSize(navigationBarId)
+            } else 0
+            minY = topSafetyMarginPx.coerceAtMost(metrics.heightPixels)
+            maxY = (metrics.heightPixels - navigationBarHeight - eagleSizePx)
+                .coerceAtLeast(minY)
         }
     }
 
@@ -511,17 +519,17 @@ class OverlayService : Service() {
     }
 
     private fun pickPerchPoint(): Pair<Int, Int> {
-        val midX = maxX / 2
+        val midX = (minX + maxX) / 2
         val midY = (minY + maxY) / 2
 
         val candidates = listOf(
-            0 to minY,
+            minX to minY,
             maxX to minY,
-            0 to maxY,
+            minX to maxY,
             maxX to maxY,
             midX to minY,
             midX to maxY,
-            0 to midY,
+            minX to midY,
             maxX to midY
         ).filter { it != lastPerch }
 

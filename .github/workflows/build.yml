@@ -23,29 +23,34 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-
       - name: Accept Android SDK licenses
         run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
-
       - name: Install Android SDK 36
         run: "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
-
       - name: Validate Kotlin and Android sources
         run: ./gradlew --no-daemon lintDebug testDebugUnitTest
-
       - name: Build debug APK
         run: ./gradlew --no-daemon assembleDebug
-
-      - name: Upload APK artifact
+      - name: Build unsigned release APK and bundle
+        run: ./gradlew --no-daemon assembleRelease bundleRelease
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: aurelion-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload unsigned release outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurelion-unsigned-release
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: 14

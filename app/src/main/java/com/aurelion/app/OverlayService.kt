@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
+import android.provider.Settings
 import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.os.Build
@@ -73,6 +74,8 @@ class OverlayService : Service() {
     private var maxY: Int = 0
     private var minY: Int = 0
     private var lastPerch: Pair<Int, Int>? = null
+    private var receiverRegistered = false
+    private var overlayAttached = false
 
     private val powerConnectionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -88,6 +91,13 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Permission may have been revoked after the Activity's preflight check.
+        if (!Settings.canDrawOverlays(this)) {
+            stopSelf()
+            return
+        }
+
         promoteToForeground()
 
         serviceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
@@ -102,6 +112,7 @@ class OverlayService : Service() {
             IntentFilter(Intent.ACTION_POWER_CONNECTED),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+        receiverRegistered = true
 
         refreshBounds()
 
@@ -300,7 +311,23 @@ class OverlayService : Service() {
             }
         }
 
-        windowManager.addView(overlayView, layoutParams)
+        try {
+            windowManager.addView(overlayView, layoutParams)
+            overlayAttached = true
+            isRunning = true
+        } catch (_: SecurityException) {
+            // Overlay permission can be revoked while the service is starting.
+            stopSelf()
+        } catch (_: WindowManager.BadTokenException) {
+            // Do not leave a foreground service running without its overlay.
+            stopSelf()
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // The companion is user-started and should not restart itself after
+        // the system or user has stopped it.
+        return START_NOT_STICKY
     }
 
     private fun promoteToForeground() {
@@ -345,13 +372,21 @@ class OverlayService : Service() {
                 .apply()
         }
 
-        runCatching {
-            unregisterReceiver(powerConnectionReceiver)
+        if (receiverRegistered) {
+            runCatching {
+                unregisterReceiver(powerConnectionReceiver)
+            }
+            receiverRegistered = false
         }
 
-        if (::overlayView.isInitialized) {
-            windowManager.removeView(overlayView)
+        if (overlayAttached && ::overlayView.isInitialized) {
+            runCatching {
+                windowManager.removeView(overlayView)
+            }
+            overlayAttached = false
         }
+
+        isRunning = false
 
         if (::serviceScope.isInitialized) {
             serviceScope.cancel()
@@ -360,6 +395,7 @@ class OverlayService : Service() {
         lifecycleOwner.handleLifecycleEvent(
             Lifecycle.Event.ON_DESTROY
         )
+        lifecycleOwner.viewModelStore.clear()
 
         super.onDestroy()
     }
@@ -502,6 +538,9 @@ class OverlayService : Service() {
     }
 
     companion object {
+        var isRunning by mutableStateOf(false)
+            private set
+
         private const val NOTIFICATION_ID = 1001
         private const val PREFS_NAME =
             "aurelion_overlay_prefs"

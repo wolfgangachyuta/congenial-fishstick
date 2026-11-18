@@ -10,13 +10,10 @@ import kotlin.random.Random
 
 /**
  * Drives AURELION's autonomous behaviour: idle blinking/expression
- * changes, unprompted speech, and (via [withExclusiveControl]) lets other
- * systems — movement, speech, later touch reactions — take the pose over
- * for a while without fighting the idle loop, or each other, for control.
- *
- * Holds no Activity/Context/WindowManager reference, so the same
- * controller + EagleView work identically in the main app preview and
- * inside the floating overlay.
+ * changes (now influenced by [PetStats]), unprompted speech, and (via
+ * [withExclusiveControl]) lets other systems — movement, speech, touch
+ * reactions — take the pose over for a while without fighting the idle
+ * loop, or each other, for control.
  */
 class EagleAnimationController {
 
@@ -29,29 +26,51 @@ class EagleAnimationController {
     var isPerformingAction by mutableStateOf(false)
         private set
 
+    var isManuallyAsleep by mutableStateOf(false)
+        private set
+
+    private var currentPetStats: PetStats = PetStats()
     private var lastVariation: EagleState? = null
     private val exclusiveControlMutex = Mutex()
+
+    fun updatePetStats(stats: PetStats) {
+        currentPetStats = stats
+    }
 
     /** Call once, from a LaunchedEffect — runs until its coroutine is cancelled. */
     suspend fun run() {
         while (true) {
-            val waitMillis = Random.nextLong(2500, 6000)
-            delay(waitMillis)
+            delay(Random.nextLong(2500, 6000))
 
-            if (!isPerformingAction && state == EagleState.IDLE) {
-                if (Random.nextFloat() < 0.35f) {
+            if (isPerformingAction) continue
+
+            if (isManuallyAsleep || currentPetStats.energy < 0.2f) {
+                if (state != EagleState.SLEEPING) state = EagleState.SLEEPING
+                continue
+            }
+
+            if (state == EagleState.SLEEPING) {
+                state = EagleState.IDLE
+                continue
+            }
+
+            if (state != EagleState.IDLE) continue
+
+            val variationChance = if (currentPetStats.happiness > 0.7f) 0.55f else 0.35f
+            when {
+                currentPetStats.hunger > 0.75f && Random.nextFloat() < 0.4f ->
+                    playExpression(EagleState.CALLING)
+                Random.nextFloat() < variationChance ->
                     playExpression(pickVariation())
-                } else {
+                else ->
                     blink()
-                }
             }
         }
     }
 
     /** Call once, from a LaunchedEffect — periodically has the eagle speak
      *  an unprompted line from [EagleDialogue], roughly every 10–30
-     *  minutes by default. Shrink the interval constants below for quick
-     *  testing. */
+     *  minutes by default. */
     suspend fun runSpeechLoop() {
         while (true) {
             delay(Random.nextLong(SPEECH_MIN_INTERVAL_MS, SPEECH_MAX_INTERVAL_MS))
@@ -60,8 +79,7 @@ class EagleAnimationController {
     }
 
     /** Shows [text] in a speech bubble for [holdMillis], with a matching
-     *  talking/calling pose, then clears it. Claims exclusive control so
-     *  it doesn't fight the idle loop or autonomous movement. */
+     *  talking/calling pose, then clears it. */
     suspend fun say(text: String, holdMillis: Long = 4200) {
         withExclusiveControl {
             try {
@@ -82,11 +100,23 @@ class EagleAnimationController {
         state = EagleState.IDLE
     }
 
+    /** User-requested sleep from the interaction menu — holds until [forceWake]. */
+    fun forceSleep() {
+        isManuallyAsleep = true
+        state = EagleState.SLEEPING
+    }
+
+    /** Cancels [forceSleep]. */
+    fun forceWake() {
+        isManuallyAsleep = false
+        state = EagleState.IDLE
+    }
+
     /**
      * Runs [action] with exclusive control of [state]: the idle loop in
      * [run] won't touch it until [action] completes, and any other
      * concurrent caller of this function waits its turn rather than
-     * running at the same time (e.g. movement and speech can't collide).
+     * running at the same time.
      */
     suspend fun <T> withExclusiveControl(action: suspend () -> T): T {
         return exclusiveControlMutex.withLock {
@@ -120,10 +150,7 @@ class EagleAnimationController {
     }
 
     companion object {
-        // Spec default: 10–30 minutes between unprompted remarks. Shrink
-        // these (e.g. 15_000L to 45_000L) while testing if you don't want
-        // to wait around for it to talk.
-        private const val SPEECH_MIN_INTERVAL_MS = 15_000L
-        private const val SPEECH_MAX_INTERVAL_MS = 45_000L
+        private const val SPEECH_MIN_INTERVAL_MS = 600_000L
+        private const val SPEECH_MAX_INTERVAL_MS = 1_800_000L
     }
 }

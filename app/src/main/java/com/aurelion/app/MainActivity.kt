@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -95,12 +96,14 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
     LaunchedEffect(Unit) { controller.runSpeechLoop() }
 
     var companionRunning by remember { mutableStateOf(false) }
+    var startupError by remember { mutableStateOf(OverlayService.startupError) }
     var petStats by remember { mutableStateOf(PetStatsStore(context).load()) }
     LaunchedEffect(Unit) {
         while (true) {
             petStats = PetStatsStore(context).load()
             companionRunning = OverlayService.isRunning &&
                 Settings.canDrawOverlays(context)
+            startupError = OverlayService.startupError
 
             if (OverlayService.isRunning && !Settings.canDrawOverlays(context)) {
                 context.stopService(Intent(context, OverlayService::class.java))
@@ -109,13 +112,34 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
         }
     }
 
+    fun launchCompanionService() {
+        OverlayService.startupError = null
+        startupError = null
+        try {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, OverlayService::class.java)
+            )
+        } catch (error: Exception) {
+            Log.e("AURELION", "Unable to request companion startup", error)
+            startupError =
+                "Android could not start AURELION. Reopen the app and try again."
+        }
+    }
+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        context.startForegroundService(Intent(context, OverlayService::class.java))
+        // A foreground service remains permitted when notification permission
+        // is denied; Android exposes its active state in system task controls.
+        launchCompanionService()
     }
 
     fun startCompanion() {
+        if (!Settings.canDrawOverlays(context)) {
+            startupError = "Allow AURELION to display over other apps to use the floating companion."
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(
                 context,
@@ -124,7 +148,7 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
         ) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            context.startForegroundService(Intent(context, OverlayService::class.java))
+            launchCompanionService()
         }
     }
 
@@ -185,6 +209,10 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
                 }) {
                     Text("Stop")
                 }
+            }
+            startupError?.let { message ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(message, color = Color(0xFFFFB4AB), fontSize = 12.sp)
             }
             Spacer(modifier = Modifier.height(12.dp))
             Button(onClick = onOpenSettings) {

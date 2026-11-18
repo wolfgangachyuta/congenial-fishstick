@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <include domain="sharedpref" path="aurelion_overlay_prefs.xml" />
+    <include domain="sharedpref" path="aurelion_pet_stats.xml" />
+    <include domain="sharedpref" path="aurelion_settings.xml" />
+</full-backup-content>

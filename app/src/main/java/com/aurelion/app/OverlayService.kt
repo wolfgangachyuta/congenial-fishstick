@@ -3,6 +3,7 @@ package com.aurelion.app
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -13,10 +14,12 @@ import android.content.pm.ServiceInfo
 import android.provider.Settings
 import android.content.res.Configuration
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.os.Build
 import android.os.IBinder
-import android.util.DisplayMetrics
+import android.util.Log
 import android.view.Gravity
+import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -94,11 +97,14 @@ class OverlayService : Service() {
 
         // Permission may have been revoked after the Activity's preflight check.
         if (!Settings.canDrawOverlays(this)) {
+            startupError = "Allow AURELION to display over other apps before starting the companion."
             stopSelf()
             return
         }
 
-        promoteToForeground()
+        try {
+            startupError = null
+            promoteToForeground()
 
         serviceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
         controller = EagleAnimationController()
@@ -311,22 +317,27 @@ class OverlayService : Service() {
             }
         }
 
-        try {
-            windowManager.addView(overlayView, layoutParams)
-            overlayAttached = true
-            isRunning = true
-        } catch (_: SecurityException) {
-            // Overlay permission can be revoked while the service is starting.
-            stopSelf()
-        } catch (_: WindowManager.BadTokenException) {
-            // Do not leave a foreground service running without its overlay.
+        windowManager.addView(overlayView, layoutParams)
+        overlayAttached = true
+        isRunning = true
+        } catch (error: Exception) {
+            Log.e(TAG, "Unable to start floating companion", error)
+            startupError = if (error is SecurityException) {
+                "Android denied permission to show the floating companion. Check overlay and notification permissions."
+            } else {
+                "AURELION could not start the floating companion. Please try again."
+            }
             stopSelf()
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // The companion is user-started and should not restart itself after
-        // the system or user has stopped it.
+        if (intent?.action == ACTION_STOP) {
+            stopSelf()
+        } else if (!Settings.canDrawOverlays(this)) {
+            startupError = "Overlay permission was revoked. The companion has been stopped."
+            stopSelf()
+        }
         return START_NOT_STICKY
     }
 
@@ -356,10 +367,7 @@ class OverlayService : Service() {
                 layoutParams.y.coerceIn(minY, maxY)
 
             if (::overlayView.isInitialized) {
-                windowManager.updateViewLayout(
-                    overlayView,
-                    layoutParams
-                )
+                updateOverlayLayout()
             }
         }
     }
@@ -399,31 +407,50 @@ class OverlayService : Service() {
         }
         lifecycleOwner.viewModelStore.clear()
 
+        stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
+    }
+
+    private fun updateOverlayLayout() {
+        if (!Settings.canDrawOverlays(this)) {
+            startupError = "Overlay permission was revoked. The companion has been stopped."
+            stopSelf()
+            return
+        }
+        try {
+            windowManager.updateViewLayout(overlayView, layoutParams)
+        } catch (error: Exception) {
+            Log.w(TAG, "Overlay update failed; stopping companion", error)
+            startupError = "The floating companion was interrupted by Android and has been stopped."
+            stopSelf()
+        }
     }
 
     private fun refreshBounds() {
         val density = resources.displayMetrics.density
-        val eagleSizePx =
-            (EAGLE_SIZE_DP * density).roundToInt()
-        val topSafetyMarginPx =
-            (TOP_SAFETY_MARGIN_DP * density).roundToInt()
+        val eagleSizePx = (EAGLE_SIZE_DP * density).roundToInt()
+        val topSafetyMarginPx = (TOP_SAFETY_MARGIN_DP * density).roundToInt()
 
-        val metrics = DisplayMetrics()
-
-        @Suppress("DEPRECATION")
-        windowManager.defaultDisplay.getMetrics(metrics)
-
-        maxX =
-            (metrics.widthPixels - eagleSizePx)
-                .coerceAtLeast(0)
-
-        maxY =
-            (metrics.heightPixels - eagleSizePx)
-                .coerceAtLeast(0)
-
-        minY =
-            topSafetyMarginPx.coerceAtMost(maxY)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val metrics = windowManager.currentWindowMetrics
+            val bounds: Rect = metrics.bounds
+            val insets = metrics.windowInsets.getInsetsIgnoringVisibility(
+                WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
+            )
+            maxX = (bounds.right - insets.right - eagleSizePx)
+                .coerceAtLeast(insets.left)
+            maxY = (bounds.bottom - insets.bottom - eagleSizePx)
+                .coerceAtLeast(insets.top)
+            minY = (bounds.top + insets.top + topSafetyMarginPx)
+                .coerceAtMost(maxY)
+        } else {
+            val metrics = android.util.DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(metrics)
+            maxX = (metrics.widthPixels - eagleSizePx).coerceAtLeast(0)
+            maxY = (metrics.heightPixels - eagleSizePx).coerceAtLeast(0)
+            minY = topSafetyMarginPx.coerceAtMost(maxY)
+        }
     }
 
     private suspend fun runAutonomousMovement(
@@ -479,10 +506,7 @@ class OverlayService : Service() {
                         ).roundToInt()
                         .coerceIn(minY, maxY)
 
-                windowManager.updateViewLayout(
-                    overlayView,
-                    layoutParams
-                )
+                updateOverlayLayout()
 
                 delay(20)
             }
@@ -510,39 +534,55 @@ class OverlayService : Service() {
     }
 
     private fun buildNotification(): Notification {
-        val channelId = "aurelion_companion"
-
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(
-            channelId,
+            CHANNEL_ID,
             "AURELION companion",
-            NotificationManager.IMPORTANCE_MIN
-        )
-
-        val manager =
-            getSystemService(
-                Context.NOTIFICATION_SERVICE
-            ) as NotificationManager
-
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Shows when your floating eagle companion is active."
+            setShowBadge(false)
+        }
         manager.createNotificationChannel(channel)
 
-        return Notification.Builder(
-            this,
-            channelId
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val openAppPendingIntent = PendingIntent.getActivity(
+            this, 0, openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-            .setContentTitle(
-                "AURELION is watching over your screen"
-            )
-            .setSmallIcon(
-                android.R.drawable.ic_menu_view
-            )
+        val stopIntent = Intent(this, OverlayService::class.java).apply {
+            action = ACTION_STOP
+        }
+        val stopPendingIntent = PendingIntent.getService(
+            this, 1, stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return Notification.Builder(this, CHANNEL_ID)
+            .setContentTitle("AURELION is active")
+            .setContentText("Your floating companion is perched on the screen.")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentIntent(openAppPendingIntent)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setVisibility(Notification.VISIBILITY_PRIVATE)
+            .setOnlyAlertOnce(true)
             .setOngoing(true)
+            .addAction(
+                Notification.Action.Builder(null, "Stop companion", stopPendingIntent).build()
+            )
             .build()
     }
 
     companion object {
         var isRunning by mutableStateOf(false)
             private set
+        var startupError by mutableStateOf<String?>(null)
 
+        private const val TAG = "AURELION"
+        private const val CHANNEL_ID = "aurelion_companion"
+        private const val ACTION_STOP = "com.aurelion.app.action.STOP_COMPANION"
         private const val NOTIFICATION_ID = 1001
         private const val PREFS_NAME =
             "aurelion_overlay_prefs"

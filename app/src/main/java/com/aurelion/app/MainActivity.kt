@@ -183,7 +183,7 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
 
             Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = "AURELION — Phase 5+7: a settled companion",
+                text = "AURELION — your floating eagle companion",
                 color = Color(0xFFE8C77E),
                 fontSize = 16.sp
             )
@@ -200,14 +200,17 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
                     } else {
                         startCompanion()
                     }
-                }) {
-                    Text(if (companionRunning) "Restart companion" else "Start floating companion")
+                }, enabled = !companionRunning) {
+                    Text(if (companionRunning) "Companion is running" else "Start floating companion")
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Button(onClick = {
-                    context.stopService(Intent(context, OverlayService::class.java))
-                    companionRunning = false
-                }) {
+                Button(
+                    onClick = {
+                        context.stopService(Intent(context, OverlayService::class.java))
+                        companionRunning = false
+                    },
+                    enabled = companionRunning
+                ) {
                     Text("Stop")
                 }
             }

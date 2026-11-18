@@ -8,3 +8,9 @@ app/build/
 /captures
 .externalNativeBuild/
 .cxx/
+
+# Release signing material — never commit private keys
+*.jks
+*.keystore
+*.p12
+*.pfx

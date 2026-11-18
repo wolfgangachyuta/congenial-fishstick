@@ -1,6 +1,17 @@
 # AURELION 🦅
 ### A living eagle. A companion in your pocket. A little wildness on your screen.
 
+<p align="center">
+  <img src="https://github.com/wolfgangachyuta/congenial-fishstick/actions/workflows/build.yml/badge.svg" alt="Android APK build">
+  <img src="https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white" alt="Platform: Android">
+  <img src="https://img.shields.io/badge/language-Kotlin-7F52FF?logo=kotlin&logoColor=white" alt="Language: Kotlin">
+  <img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white" alt="UI: Jetpack Compose">
+  <img src="https://img.shields.io/badge/min%20Android%20SDK-26-brightgreen?logo=android" alt="Minimum Android SDK 26">
+  <img src="https://img.shields.io/badge/status-experimental-orange" alt="Project status: Experimental">
+  <img src="https://img.shields.io/badge/docs-available-blue?logo=readthedocs&logoColor=white" alt="Documentation available">
+</p>
+
+
 AURELION is an Android experiment in making a digital companion feel less like an app and more like a creature. A golden eagle lives in a floating overlay above your other apps: it perches, wanders, blinks, rests, reacts, and—over time—develops a personality shaped by how you interact with it.
 
 > **Design principle:** AURELION should feel like a little living creature that happens to inhabit your phone—not an assistant that happens to look like an eagle.

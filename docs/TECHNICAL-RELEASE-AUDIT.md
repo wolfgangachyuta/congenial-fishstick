@@ -106,3 +106,38 @@ The primary blockers are the outdated Android Gradle Plugin/toolchain, the absen
 ## Audit boundaries
 
 This audit does not certify behavior on any physical device, does not claim that the latest commit builds successfully, and does not certify the full dependency graph or packaged APK. Those require a reproducible build, test execution, dependency review and device validation.
+
+
+---
+
+## Remediation progress — 18 November 2026
+
+This addendum supersedes the earlier configuration snapshot above.
+
+### Implemented in the repository
+
+- Updated Android Gradle Plugin to **8.13.2**.
+- Updated Kotlin and the Compose compiler plugin to **2.4.21**, aligned with the selected Gradle/AGP toolchain.
+- Updated CI to use **Gradle 8.13**, **JDK 17**, and Android SDK / Build Tools **36**.
+- Set both `compileSdk` and `targetSdk` to **36**.
+- Declared the overlay host as a `specialUse` foreground service, added `FOREGROUND_SERVICE_SPECIAL_USE`, and documented the service subtype in the manifest.
+- Updated the service to call the typed `startForeground()` overload on Android 14 and later.
+- Added safe-drawing insets to the Activity content for edge-to-edge Android versions.
+- Added a defensive overlay-permission check before service startup, handled overlay attachment failures, tracked actual service state, and made service cleanup conditional on acquired resources.
+- Set the user-started overlay service to `START_NOT_STICKY`.
+- Added CI triggers for pushes and pull requests, plus lint and unit-test tasks. Concurrent runs on the same ref are cancelled to avoid redundant builds.
+
+### Validation status
+
+The workflow has been triggered against the upgraded toolchain. At the time of this addendum, the latest run has not yet completed. **No successful build or lint result is claimed here.** The new API 36 target also still requires physical-device validation.
+
+### Remaining work
+
+1. Confirm a clean API 36 CI build and resolve any compiler or lint failures.
+2. Add the official Gradle Wrapper (scripts, wrapper JAR, and pinned distribution properties) so local builds do not depend on a globally installed Gradle.
+3. Complete service-start failure reporting and permission-revocation testing.
+4. Replace deprecated display-bound calculations with modern window metrics and insets.
+5. Review the battery-exemption request and remove it unless device testing demonstrates a genuine need.
+6. Complete backup/data-extraction rules and a full privacy/dependency/network audit.
+7. Add unit tests, a launcher/adaptive icon, and a proper notification icon.
+8. Configure secure release signing only after the release build is validated.

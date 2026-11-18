@@ -170,13 +170,13 @@ fun AurelionPreviewScreen(onOpenSettings: () -> Unit) {
 
             Text("Energy", color = Color(0xFFB8B8B8), fontSize = 12.sp)
             LinearProgressIndicator(
-                progress = petStats.energy,
+                progress = { petStats.energy },
                 modifier = Modifier.fillMaxWidth(0.6f)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text("Happiness", color = Color(0xFFB8B8B8), fontSize = 12.sp)
             LinearProgressIndicator(
-                progress = petStats.happiness,
+                progress = { petStats.happiness },
                 modifier = Modifier.fillMaxWidth(0.6f)
             )
 

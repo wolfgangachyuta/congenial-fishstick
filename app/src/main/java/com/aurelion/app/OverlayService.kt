@@ -107,217 +107,217 @@ class OverlayService : Service() {
             startupError = null
             promoteToForeground()
 
-        serviceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
-        controller = EagleAnimationController()
-        petStatsController = PetStatsController(this)
+            serviceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
+            controller = EagleAnimationController()
+            petStatsController = PetStatsController(this)
 
-        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        ContextCompat.registerReceiver(
-            this,
-            powerConnectionReceiver,
-            IntentFilter(Intent.ACTION_POWER_CONNECTED),
-            ContextCompat.RECEIVER_NOT_EXPORTED
-        )
-        receiverRegistered = true
+            prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            ContextCompat.registerReceiver(
+                this,
+                powerConnectionReceiver,
+                IntentFilter(Intent.ACTION_POWER_CONNECTED),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            receiverRegistered = true
 
-        refreshBounds()
+            refreshBounds()
 
-        val savedX = prefs.getInt(KEY_X, maxX).coerceIn(minX, maxX)
-        val savedY = prefs.getInt(KEY_Y, maxY / 3).coerceIn(minY, maxY)
+            val savedX = prefs.getInt(KEY_X, maxX).coerceIn(minX, maxX)
+            val savedY = prefs.getInt(KEY_Y, maxY / 3).coerceIn(minY, maxY)
 
-        layoutParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = savedX
-            y = savedY
-        }
-
-        lifecycleOwner.performRestore()
-        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
-        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START)
-        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-
-        overlayView = ComposeView(this)
-        overlayView.setViewTreeLifecycleOwner(lifecycleOwner)
-        overlayView.setViewTreeViewModelStoreOwner(lifecycleOwner)
-        overlayView.setViewTreeSavedStateRegistryOwner(lifecycleOwner)
-
-        overlayView.setContent {
-            val coroutineScope = rememberCoroutineScope()
-            var showMenu by remember { mutableStateOf(false) }
-
-            LaunchedEffect(Unit) { controller.run() }
-            LaunchedEffect(Unit) { controller.runSpeechLoop() }
-            LaunchedEffect(Unit) { runAutonomousMovement(controller) }
-            LaunchedEffect(Unit) { petStatsController.run() }
-
-            LaunchedEffect(controller.state) {
-                petStatsController.isResting =
-                    controller.state == EagleState.SLEEPING
+            layoutParams = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.TOP or Gravity.START
+                x = savedX
+                y = savedY
             }
 
-            LaunchedEffect(petStatsController.stats) {
-                controller.updatePetStats(petStatsController.stats)
-            }
+            lifecycleOwner.performRestore()
+            lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+            lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START)
+            lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
-            LaunchedEffect(Unit) {
-                val settingsStore = SettingsStore(this@OverlayService)
+            overlayView = ComposeView(this)
+            overlayView.setViewTreeLifecycleOwner(lifecycleOwner)
+            overlayView.setViewTreeViewModelStoreOwner(lifecycleOwner)
+            overlayView.setViewTreeSavedStateRegistryOwner(lifecycleOwner)
 
-                while (true) {
-                    controller.updateTalkativeness(
-                        settingsStore.loadTalkativeness()
-                    )
-                    delay(10_000)
+            overlayView.setContent {
+                val coroutineScope = rememberCoroutineScope()
+                var showMenu by remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) { controller.run() }
+                LaunchedEffect(Unit) { controller.runSpeechLoop() }
+                LaunchedEffect(Unit) { runAutonomousMovement(controller) }
+                LaunchedEffect(Unit) { petStatsController.run() }
+
+                LaunchedEffect(controller.state) {
+                    petStatsController.isResting =
+                        controller.state == EagleState.SLEEPING
                 }
-            }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // Fixed-height slot prevents speech bubbles from moving
-                // the eagle while entering or leaving the screen.
-                Box(
-                    modifier = Modifier
-                        .height(64.dp)
-                        .widthIn(max = 200.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    // Explicitly select the enclosing ColumnScope overload.
-                    // The BoxScope receiver otherwise makes this call ambiguous
-                    // to Kotlin's implicit-receiver resolution.
-                    this@Column.AnimatedVisibility(
-                        visible = controller.speechText != null
-                    ) {
-                        SpeechBubble(
-                            text = controller.speechText.orEmpty()
+                LaunchedEffect(petStatsController.stats) {
+                    controller.updatePetStats(petStatsController.stats)
+                }
+
+                LaunchedEffect(Unit) {
+                    val settingsStore = SettingsStore(this@OverlayService)
+
+                    while (true) {
+                        controller.updateTalkativeness(
+                            settingsStore.loadTalkativeness()
                         )
+                        delay(10_000)
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .size(EAGLE_SIZE_DP.dp)
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onTap = {
-                                    coroutineScope.launch {
-                                        if (!controller.isPerformingAction) {
-                                            controller.playExpression(
-                                                listOf(
-                                                    EagleState.LOOK_LEFT,
-                                                    EagleState.LOOK_RIGHT,
-                                                    EagleState.CURIOUS
-                                                ).random()
-                                            )
-                                        }
-                                    }
-                                },
-                                onDoubleTap = {
-                                    coroutineScope.launch {
-                                        if (!controller.isPerformingAction) {
-                                            controller.playExpression(
-                                                EagleState.EXCITED,
-                                                holdMillis = 1200
-                                            )
-                                        }
-                                    }
-                                },
-                                onLongPress = {
-                                    showMenu = true
-                                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Fixed-height slot prevents speech bubbles from moving
+                    // the eagle while entering or leaving the screen.
+                    Box(
+                        modifier = Modifier
+                            .height(64.dp)
+                            .widthIn(max = 200.dp),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        // Explicitly select the enclosing ColumnScope overload.
+                        // The BoxScope receiver otherwise makes this call ambiguous
+                        // to Kotlin's implicit-receiver resolution.
+                        this@Column.AnimatedVisibility(
+                            visible = controller.speechText != null
+                        ) {
+                            SpeechBubble(
+                                text = controller.speechText.orEmpty()
                             )
                         }
-                        .pointerInput(Unit) {
-                            detectDragGestures { _, dragAmount ->
-                                layoutParams.x =
-                                    (layoutParams.x + dragAmount.x.roundToInt())
-                                        .coerceIn(minX, maxX)
+                    }
 
-                                layoutParams.y =
-                                    (layoutParams.y + dragAmount.y.roundToInt())
-                                        .coerceIn(minY, maxY)
-
-                                updateOverlayLayout()
-                            }
-                        }
-                ) {
-                    EagleView(
-                        controller = controller,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                AnimatedVisibility(visible = showMenu) {
-                    EagleInteractionMenu(
-                        onMakeSound = {
-                            showMenu = false
-                            coroutineScope.launch {
-                                controller.say(EagleDialogue.pickLine())
-                            }
-                        },
-                        onFlySomewhere = {
-                            showMenu = false
-                            coroutineScope.launch {
-                                flyToRandomPerch(controller)
-                            }
-                        },
-                        onSleep = {
-                            showMenu = false
-                            controller.forceSleep()
-                        },
-                        onWakeUp = {
-                            showMenu = false
-                            controller.forceWake()
-                        },
-                        onFeed = {
-                            showMenu = false
-                            petStatsController.feed()
-                            coroutineScope.launch {
-                                controller.say(
-                                    "Much appreciated. More, if you insist."
+                    Box(
+                        modifier = Modifier
+                            .size(EAGLE_SIZE_DP.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = {
+                                        coroutineScope.launch {
+                                            if (!controller.isPerformingAction) {
+                                                controller.playExpression(
+                                                    listOf(
+                                                        EagleState.LOOK_LEFT,
+                                                        EagleState.LOOK_RIGHT,
+                                                        EagleState.CURIOUS
+                                                    ).random()
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onDoubleTap = {
+                                        coroutineScope.launch {
+                                            if (!controller.isPerformingAction) {
+                                                controller.playExpression(
+                                                    EagleState.EXCITED,
+                                                    holdMillis = 1200
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onLongPress = {
+                                        showMenu = true
+                                    }
                                 )
                             }
-                        },
-                        onPet = {
-                            showMenu = false
-                            petStatsController.pet()
-                            coroutineScope.launch {
-                                controller.playExpression(
-                                    EagleState.CURIOUS,
-                                    holdMillis = 1400
-                                )
+                            .pointerInput(Unit) {
+                                detectDragGestures { _, dragAmount ->
+                                    layoutParams.x =
+                                        (layoutParams.x + dragAmount.x.roundToInt())
+                                            .coerceIn(minX, maxX)
+
+                                    layoutParams.y =
+                                        (layoutParams.y + dragAmount.y.roundToInt())
+                                            .coerceIn(minY, maxY)
+
+                                    updateOverlayLayout()
+                                }
                             }
-                        },
-                        onHide = {
-                            showMenu = false
-                            stopSelf()
-                        },
-                        onOpenApp = {
-                            showMenu = false
-                            val launchIntent =
-                                Intent(
-                                    this@OverlayService,
-                                    MainActivity::class.java
-                                ).apply {
-                                    addFlags(
-                                        Intent.FLAG_ACTIVITY_NEW_TASK
+                    ) {
+                        EagleView(
+                            controller = controller,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    AnimatedVisibility(visible = showMenu) {
+                        EagleInteractionMenu(
+                            onMakeSound = {
+                                showMenu = false
+                                coroutineScope.launch {
+                                    controller.say(EagleDialogue.pickLine())
+                                }
+                            },
+                            onFlySomewhere = {
+                                showMenu = false
+                                coroutineScope.launch {
+                                    flyToRandomPerch(controller)
+                                }
+                            },
+                            onSleep = {
+                                showMenu = false
+                                controller.forceSleep()
+                            },
+                            onWakeUp = {
+                                showMenu = false
+                                controller.forceWake()
+                            },
+                            onFeed = {
+                                showMenu = false
+                                petStatsController.feed()
+                                coroutineScope.launch {
+                                    controller.say(
+                                        "Much appreciated. More, if you insist."
                                     )
                                 }
+                            },
+                            onPet = {
+                                showMenu = false
+                                petStatsController.pet()
+                                coroutineScope.launch {
+                                    controller.playExpression(
+                                        EagleState.CURIOUS,
+                                        holdMillis = 1400
+                                    )
+                                }
+                            },
+                            onHide = {
+                                showMenu = false
+                                stopSelf()
+                            },
+                            onOpenApp = {
+                                showMenu = false
+                                val launchIntent =
+                                    Intent(
+                                        this@OverlayService,
+                                        MainActivity::class.java
+                                    ).apply {
+                                        addFlags(
+                                            Intent.FLAG_ACTIVITY_NEW_TASK
+                                        )
+                                    }
 
-                            startActivity(launchIntent)
-                        }
-                    )
+                                startActivity(launchIntent)
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        windowManager.addView(overlayView, layoutParams)
-        overlayAttached = true
-        isRunning = true
+            windowManager.addView(overlayView, layoutParams)
+            overlayAttached = true
+            isRunning = true
         } catch (error: Exception) {
             Log.e(TAG, "Unable to start floating companion", error)
             startupError = if (error is SecurityException) {

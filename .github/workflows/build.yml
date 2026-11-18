@@ -38,14 +38,12 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.13"
 
       - name: Validate Kotlin and Android sources
-        run: gradle lintDebug testDebugUnitTest --no-daemon
+        run: ./gradlew lintDebug testDebugUnitTest --no-daemon
 
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

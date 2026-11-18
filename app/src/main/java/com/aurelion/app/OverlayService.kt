@@ -166,7 +166,10 @@ class OverlayService : Service() {
                         .widthIn(max = 200.dp),
                     contentAlignment = Alignment.BottomCenter
                 ) {
-                    AnimatedVisibility(
+                    // Explicitly select the enclosing ColumnScope overload.
+                    // The BoxScope receiver otherwise makes this call ambiguous
+                    // to Kotlin's implicit-receiver resolution.
+                    this@Column.AnimatedVisibility(
                         visible = controller.speechText != null
                     ) {
                         SpeechBubble(

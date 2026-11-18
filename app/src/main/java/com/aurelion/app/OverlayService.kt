@@ -392,9 +392,11 @@ class OverlayService : Service() {
             serviceScope.cancel()
         }
 
-        lifecycleOwner.handleLifecycleEvent(
-            Lifecycle.Event.ON_DESTROY
-        )
+        if (lifecycleOwner.lifecycle.currentState != Lifecycle.State.INITIALIZED &&
+            lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED
+        ) {
+            lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        }
         lifecycleOwner.viewModelStore.clear()
 
         super.onDestroy()

@@ -421,7 +421,12 @@ fun EagleView(controller: EagleAnimationController, modifier: Modifier = Modifie
             painter = painterResource(id = pose.drawableRes),
             contentDescription = stringResource(R.string.eagle_companion_description),
             contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize()
+            // Keep a transparent visual safety margin around every pose.
+            // Several source sprites reach their canvas edges, so this prevents
+            // wing tips and feathers from appearing flush against the viewport.
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp)
         )
     }
 }

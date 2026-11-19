@@ -29,12 +29,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +60,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.delay
@@ -335,7 +339,7 @@ fun SpeechBubble(text: String) {
     Surface(
         modifier = Modifier
             .padding(bottom = 6.dp)
-            .widthIn(max = 200.dp),
+            .widthIn(max = 240.dp),
         shape = RoundedCornerShape(14.dp),
         color = Color(0xFFFFF6E0),
         shadowElevation = 4.dp
@@ -344,7 +348,9 @@ fun SpeechBubble(text: String) {
             text = text,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             color = Color(0xFF3A2C14),
-            fontSize = 13.sp
+            fontSize = 13.sp,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -357,6 +363,7 @@ fun EagleInteractionMenu(
     onWakeUp: () -> Unit,
     onFeed: () -> Unit,
     onPet: () -> Unit,
+    onReact: (EagleState) -> Unit,
     onHide: () -> Unit,
     onOpenApp: () -> Unit
 ) {
@@ -366,7 +373,9 @@ fun EagleInteractionMenu(
         shadowElevation = 6.dp,
         modifier = Modifier
             .padding(top = 6.dp)
-            .widthIn(max = 180.dp)
+            .widthIn(max = 200.dp)
+            .heightIn(max = 320.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Column(modifier = Modifier.padding(6.dp)) {
             MenuAction("Make a sound", onMakeSound)
@@ -375,6 +384,12 @@ fun EagleInteractionMenu(
             MenuAction("Wake up", onWakeUp)
             MenuAction("Feed", onFeed)
             MenuAction("Pet", onPet)
+            MenuAction("Curious tilt", { onReact(EagleState.CURIOUS) })
+            MenuAction("Preen feathers", { onReact(EagleState.PREENING) })
+            MenuAction("Scratch", { onReact(EagleState.SCRATCHING) })
+            MenuAction("Stretch wings", { onReact(EagleState.STRETCHING) })
+            MenuAction("Startle", { onReact(EagleState.SURPRISED) })
+            MenuAction("Flap wings", { onReact(EagleState.EXCITED) })
             MenuAction("Hide companion", onHide)
             MenuAction("Open app", onOpenApp)
         }

@@ -88,7 +88,10 @@ class EagleAnimationController {
     suspend fun runSpeechLoop() {
         while (true) {
             val base = Random.nextLong(SPEECH_MIN_INTERVAL_MS, SPEECH_MAX_INTERVAL_MS)
-            delay((base / talkativenessMultiplier).toLong())
+            delay(
+                (base / talkativenessMultiplier).toLong()
+                    .coerceAtMost(MAX_AUTOMATIC_SPEECH_DELAY_MS)
+            )
 
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             val isNight = hour < 6 || hour >= 23
@@ -187,7 +190,8 @@ class EagleAnimationController {
     }
 
     companion object {
-        private const val SPEECH_MIN_INTERVAL_MS = 600_000L
-        private const val SPEECH_MAX_INTERVAL_MS = 1_800_000L
+        private const val SPEECH_MIN_INTERVAL_MS = 300_000L
+        private const val SPEECH_MAX_INTERVAL_MS = 600_000L
+        private const val MAX_AUTOMATIC_SPEECH_DELAY_MS = 900_000L
     }
 }

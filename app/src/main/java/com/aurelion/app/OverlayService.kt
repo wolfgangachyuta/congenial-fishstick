@@ -27,7 +27,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.LaunchedEffect
@@ -60,7 +60,7 @@ import kotlin.random.Random
  * Hosts AURELION as a small draggable overlay bubble above every other
  * app. Combines drag-to-reposition, autonomous perch-to-perch movement,
  * unprompted speech, touch interactions, pet-care stats, charging-state
- * awareness, and a fixed-height slot for the speech bubble.
+ * awareness, and a speech-bubble slot that can grow for longer dialogue.
  */
 class OverlayService : Service() {
 
@@ -178,12 +178,12 @@ class OverlayService : Service() {
                 }
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Fixed-height slot prevents speech bubbles from moving
-                    // the eagle while entering or leaving the screen.
+                    // Keep a stable minimum slot, but let longer dialogue expand instead
+                    // of clipping the bubble at a fixed height.
                     Box(
                         modifier = Modifier
-                            .height(64.dp)
-                            .widthIn(max = 200.dp),
+                            .heightIn(min = 64.dp)
+                            .widthIn(max = 240.dp),
                         contentAlignment = Alignment.BottomCenter
                     ) {
                         // Explicitly select the enclosing ColumnScope overload.
@@ -290,6 +290,12 @@ class OverlayService : Service() {
                                         EagleState.CURIOUS,
                                         holdMillis = 1400
                                     )
+                                }
+                            },
+                            onReact = { reaction ->
+                                showMenu = false
+                                coroutineScope.launch {
+                                    controller.playExpression(reaction, holdMillis = 1400)
                                 }
                             },
                             onHide = {
